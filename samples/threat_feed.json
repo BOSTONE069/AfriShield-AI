@@ -1,0 +1,10 @@
+{
+  "domains": {
+    "kra-refund-verify.com": "Known demo KRA refund phishing domain.",
+    "mpesa-secure-helpdesk.net": "Known demo M-Pesa account recovery phishing domain.",
+    "tuk-studentportal-support.com": "Known demo fake university portal domain.",
+    "donor-grants-africa.org": "Known demo NGO grant impersonation domain.",
+    "sacco-member-verify.co.ke": "Known demo SACCO account verification phishing domain."
+  },
+  "hashes": {}
+}
