@@ -1,3 +1,13 @@
+"""Streamlit dashboard for the AfriShield AI threat intelligence console.
+
+The page is organized like a lightweight SOC workspace:
+- sidebar: runtime and demo queue
+- top band: case verdict, severity, score, latency
+- left pane: evidence intake
+- right pane: case assessment
+- tabs: intelligence, observables, ATT&CK mapping, response, report
+"""
+
 import hashlib
 import html
 import os
@@ -9,6 +19,7 @@ import requests
 import streamlit as st
 
 
+# API_BASE can be overridden when the backend runs on a different host/port.
 API_BASE = os.getenv("AFRISHIELD_API_BASE", "http://localhost:8000")
 INPUT_TYPES = ["email", "url", "sms", "social_message", "text"]
 SEVERITY_COLORS = {
@@ -23,10 +34,12 @@ st.set_page_config(page_title="AfriShield AI", layout="wide", initial_sidebar_st
 
 
 def esc(value: object) -> str:
+    """Escape dynamic values before embedding them in custom HTML blocks."""
     return html.escape(str(value))
 
 
 def inject_styles() -> None:
+    """Inject custom CSS for a threat-intelligence-console visual style."""
     st.markdown(
         """
         <style>
@@ -421,6 +434,7 @@ def inject_styles() -> None:
 
 @st.cache_data(ttl=30)
 def load_samples() -> list[dict[str, Any]]:
+    """Fetch bundled demo cases from the backend and cache them briefly."""
     try:
         response = requests.get(f"{API_BASE}/api/samples", timeout=5)
         response.raise_for_status()
@@ -431,6 +445,7 @@ def load_samples() -> list[dict[str, Any]]:
 
 @st.cache_data(ttl=10)
 def load_runtime() -> dict[str, Any]:
+    """Fetch model/runtime metadata for the sidebar and status chips."""
     try:
         response = requests.get(f"{API_BASE}/api/runtime", timeout=5)
         response.raise_for_status()
@@ -450,6 +465,7 @@ def load_runtime() -> dict[str, Any]:
 
 
 def api_post_analyze(input_type: str, content: str, context: str) -> dict[str, Any]:
+    """Submit one case to the FastAPI analysis endpoint."""
     response = requests.post(
         f"{API_BASE}/api/analyze",
         json={"input_type": input_type, "content": content, "context": context},
@@ -460,6 +476,7 @@ def api_post_analyze(input_type: str, content: str, context: str) -> dict[str, A
 
 
 def runtime_row(label: str, value: object) -> None:
+    """Render one compact runtime key/value row in the sidebar."""
     st.markdown(
         f"""
         <div class="runtime-row">
@@ -472,6 +489,7 @@ def runtime_row(label: str, value: object) -> None:
 
 
 def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> None:
+    """Render the left-side operations rail with model status and sample queue."""
     with st.sidebar:
         st.markdown(
             """
@@ -503,6 +521,7 @@ def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> No
 
 
 def render_topbar(runtime: dict[str, Any]) -> None:
+    """Render the page header and high-level model state chips."""
     model_state = "LLM ACTIVE" if runtime.get("llm_enabled") else "RULES MODE"
     st.markdown(
         f"""
@@ -523,6 +542,7 @@ def render_topbar(runtime: dict[str, Any]) -> None:
 
 
 def render_band(result: dict[str, Any] | None, runtime: dict[str, Any]) -> None:
+    """Render the dark command band that summarizes the current case state."""
     threat = result["threat_type"].replace("_", " ") if result else "Awaiting Submission"
     severity = result["severity"] if result else "Not Scored"
     score = f"{result['risk_score']}/100" if result else "Pending"
@@ -555,6 +575,7 @@ def render_band(result: dict[str, Any] | None, runtime: dict[str, Any]) -> None:
 
 
 def ioc_rows(iocs: dict[str, list[str]]) -> list[dict[str, str]]:
+    """Flatten IOC categories into table rows for the Observables tab."""
     rows = []
     dispositions = {
         "urls": "URL requiring blocklist review",
@@ -577,6 +598,7 @@ def ioc_rows(iocs: dict[str, list[str]]) -> list[dict[str, str]]:
 
 
 def action_rows(actions: list[str]) -> list[dict[str, str]]:
+    """Format recommended actions as a response-priority table."""
     rows = []
     for index, action in enumerate(actions, start=1):
         rows.append(
@@ -590,11 +612,13 @@ def action_rows(actions: list[str]) -> list[dict[str, str]]:
 
 
 def case_id(content: str) -> str:
+    """Generate a stable short case ID from the submitted evidence text."""
     digest = hashlib.sha1(content.encode("utf-8")).hexdigest()[:8].upper()
     return f"AFS-{digest}"
 
 
 def severity_badge(severity: str) -> str:
+    """Build the colored severity badge used in the case card."""
     color = SEVERITY_COLORS.get(severity, "#64748b")
     return (
         f'<span class="severity-badge" style="--severity-color:{color};'
@@ -603,6 +627,7 @@ def severity_badge(severity: str) -> str:
 
 
 def render_case(result: dict[str, Any], content: str, input_type: str, context: str, runtime: dict[str, Any]) -> None:
+    """Render the active case card with score ring, verdict, and key signals."""
     iocs = result["iocs"]
     rows = ioc_rows(iocs)
     runtime_after = result.get("runtime", runtime)
@@ -658,6 +683,7 @@ def render_case(result: dict[str, Any], content: str, input_type: str, context: 
 
 
 def render_empty_queue(samples: list[dict[str, Any]]) -> None:
+    """Render the queue preview shown before any case has been analyzed."""
     preview_rows = [
         {
             "Case": sample.get("name", "Sample"),
@@ -671,6 +697,8 @@ def render_empty_queue(samples: list[dict[str, Any]]) -> None:
     st.dataframe(pd.DataFrame(preview_rows), width="stretch", hide_index=True)
 
 
+# Page composition starts here. Streamlit reruns the file top-to-bottom after
+# every interaction, so persistent analysis state lives in st.session_state.
 inject_styles()
 runtime = load_runtime()
 samples = load_samples()
@@ -683,6 +711,7 @@ render_band(result, runtime)
 sample_names = ["Custom investigation"] + [sample["name"] for sample in samples]
 left, right = st.columns([0.82, 1.18], gap="large")
 
+# Evidence intake panel: choose a sample or paste a new suspicious message.
 with left:
     st.markdown('<div class="section-label">Evidence Intake</div>', unsafe_allow_html=True)
     selected_sample = st.selectbox("Case Template", sample_names)
@@ -700,6 +729,7 @@ with left:
     )
     analyze = st.button("Run Triage", type="primary", width="stretch")
 
+# Case assessment panel: shows either the active result or a neutral empty state.
 with right:
     st.markdown('<div class="section-label">Case Assessment</div>', unsafe_allow_html=True)
     if result:
@@ -729,6 +759,8 @@ if analyze:
     else:
         with st.spinner("Running model-assisted threat triage..."):
             try:
+                # Store request metadata with the response so the case card
+                # remains stable after Streamlit reruns the page.
                 st.session_state.analysis_result = api_post_analyze(input_type, content, context)
                 st.session_state.analysis_content = content
                 st.session_state.analysis_input_type = input_type
@@ -746,6 +778,7 @@ if not result:
     st.divider()
     render_empty_queue(samples)
 else:
+    # Once analysis exists, the lower workspace becomes the analyst detail area.
     iocs = result["iocs"]
     rows = ioc_rows(iocs)
     evidence = result.get("evidence") or ["No strong malicious evidence detected."]

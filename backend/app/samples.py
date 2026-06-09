@@ -1,3 +1,5 @@
+"""Load bundled demo samples for the dashboard and /api/samples."""
+
 import json
 from pathlib import Path
 
@@ -7,6 +9,7 @@ SAMPLES_DIR = ROOT / "samples"
 
 
 def load_samples() -> list[dict]:
+    """Read all JSON sample files and return one combined sample list."""
     samples = []
     for path in sorted(SAMPLES_DIR.glob("*.json")):
         with path.open("r", encoding="utf-8") as handle:

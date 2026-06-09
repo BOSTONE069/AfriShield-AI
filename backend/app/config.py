@@ -1,3 +1,10 @@
+"""Application configuration loaded from environment files and process env.
+
+The backend supports two inference modes:
+- local_transformers: load a local Hugging Face model with PyTorch.
+- openai_compatible: call a vLLM/OpenAI-compatible HTTP endpoint.
+"""
+
 from functools import lru_cache
 from os import getenv
 from pathlib import Path
@@ -5,12 +12,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
+# Load root-level and backend-level env files so the app works whether it is
+# started from the repository root or from inside the backend folder.
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 load_dotenv(ROOT / "backend" / ".env")
 
 
 class Settings:
+    """Simple settings container.
+
+    Values are evaluated when the class is instantiated by get_settings().
+    This keeps the rest of the app from repeatedly reading environment vars.
+    """
+
     app_name: str = getenv("APP_NAME", "AfriShield AI")
     llm_provider: str = getenv("LLM_PROVIDER", "local_transformers")
     llm_api_base: str = getenv("LLM_API_BASE", "")
@@ -30,4 +45,5 @@ class Settings:
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return a cached settings object for consistent app-wide configuration."""
     return Settings()

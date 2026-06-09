@@ -1,8 +1,16 @@
+"""Rule-based threat classification for reliable first-pass triage.
+
+The LLM can enrich the analysis, but this classifier provides a deterministic
+baseline tuned to common African/Kenyan scam and phishing patterns.
+"""
+
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class Classification:
+    """Normalized classification output consumed by the analyzer pipeline."""
+
     threat_type: str
     summary: str
     evidence: list[str]
@@ -54,9 +62,12 @@ LOCAL_IMPERSONATION_KEYWORDS = {
 
 
 def classify_threat(text: str, iocs: dict) -> Classification:
+    """Classify submitted content using local evidence and keyword rules."""
     lower_text = text.lower()
     evidence: list[str] = []
 
+    # Localized impersonation signals help the tool understand common regional
+    # lures such as KRA, M-Pesa, SACCO, university portal, and donor scams.
     for keyword, label in LOCAL_IMPERSONATION_KEYWORDS.items():
         if keyword in lower_text:
             evidence.append(label)
@@ -80,6 +91,8 @@ def classify_threat(text: str, iocs: dict) -> Classification:
     asks_for_credentials = any(term in lower_text for term in credential_terms)
     has_financial_lure = any(term in lower_text for term in financial_terms)
 
+    # Ordered checks give more specific classifications a chance before generic
+    # suspicious/benign outcomes.
     if any(term in lower_text for term in malware_terms):
         threat_type = "MALWARE"
         summary = "The content appears to encourage opening or enabling potentially malicious files."
@@ -110,6 +123,7 @@ def classify_threat(text: str, iocs: dict) -> Classification:
 
 
 def _recommended_actions(threat_type: str) -> list[str]:
+    """Return analyst response actions matched to the final threat category."""
     common = ["Preserve the message and analysis output for audit records."]
     actions = {
         "PHISHING": ["Do not click the link.", "Block or monitor the domain.", "Warn targeted users about the campaign."],

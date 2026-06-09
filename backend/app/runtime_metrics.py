@@ -1,9 +1,13 @@
+"""Runtime metadata and timing helpers shown in the dashboard."""
+
 import time
 
 from backend.app.config import get_settings
 
 
 class Timer:
+    """Small context manager for measuring pipeline latency."""
+
     def __enter__(self):
         self.start = time.perf_counter()
         return self
@@ -14,6 +18,7 @@ class Timer:
 
 
 def runtime_payload(latency_seconds: float = 0.0, tokens_per_second: float = 0.0) -> dict:
+    """Return runtime metadata for the UI and API clients."""
     settings = get_settings()
     gpu = settings.runtime_gpu
     if gpu == "auto":
@@ -33,6 +38,7 @@ def runtime_payload(latency_seconds: float = 0.0, tokens_per_second: float = 0.0
 
 
 def _detect_compute_device() -> str:
+    """Detect the local CUDA GPU name when RUNTIME_GPU=auto."""
     try:
         import torch
 

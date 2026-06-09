@@ -1,3 +1,6 @@
+"""Markdown incident report generation."""
+
+
 def generate_report(
     input_type: str,
     context: str,
@@ -10,11 +13,14 @@ def generate_report(
     evidence: list[str],
     recommended_actions: list[str],
 ) -> str:
+    """Build the SOC-ready Markdown report returned by /api/analyze."""
     ioc_lines = []
     for key, values in iocs.items():
         display = ", ".join(values) if values else "None detected"
         ioc_lines.append(f"- {key.title()}: {display}")
 
+    # Keep empty MITRE/evidence sections explicit so the report reads cleanly
+    # for benign cases as well as malicious ones.
     mitre_lines = [
         f"- {item['tactic']} / {item['technique']}: {item.get('explanation', '')}".rstrip()
         for item in mitre_mapping

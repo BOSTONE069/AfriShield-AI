@@ -1,3 +1,7 @@
+"""Static mapping from AfriShield threat types to ATT&CK-style techniques."""
+
+# This is deliberately small for the MVP. It keeps the demo explainable and can
+# later be replaced with richer ATT&CK technique IDs and references.
 MITRE_MAPPINGS = {
     "PHISHING": [
         {
@@ -63,4 +67,5 @@ MITRE_MAPPINGS = {
 
 
 def map_to_mitre(threat_type: str) -> list[dict]:
+    """Return MITRE mappings for a normalized threat type."""
     return MITRE_MAPPINGS.get(threat_type, [])

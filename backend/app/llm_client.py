@@ -1,3 +1,9 @@
+"""LLM adapters for local Transformers and OpenAI-compatible vLLM endpoints.
+
+The analyzer asks this module for JSON. It does not need to know whether the
+response came from the local Qwen model or a remote AMD/vLLM endpoint.
+"""
+
 import json
 import time
 from typing import Any
@@ -8,6 +14,7 @@ from backend.app.config import get_settings
 
 
 def call_chat_json(messages: list[dict[str, str]], temperature: float = 0.1) -> tuple[dict[str, Any] | None, dict]:
+    """Call the configured LLM provider and return parsed JSON plus metrics."""
     settings = get_settings()
     if not settings.use_llm:
         return None, {"latency_seconds": 0.0, "tokens_per_second": 0.0}
@@ -16,6 +23,8 @@ def call_chat_json(messages: list[dict[str, str]], temperature: float = 0.1) -> 
         return _call_local_transformers(messages)
 
     if not settings.llm_api_base:
+        # OpenAI-compatible mode needs an endpoint. Without one, callers fall
+        # back to deterministic rules.
         return None, {"latency_seconds": 0.0, "tokens_per_second": 0.0}
 
     url = settings.llm_api_base.rstrip("/") + "/chat/completions"
@@ -40,16 +49,20 @@ def call_chat_json(messages: list[dict[str, str]], temperature: float = 0.1) -> 
     return json.loads(content), {"latency_seconds": latency, "tokens_per_second": tokens_per_second}
 
 
+# Local model objects are cached in memory after the first request. This avoids
+# reloading model weights for every analysis call.
 _LOCAL_MODEL = None
 _LOCAL_TOKENIZER = None
 
 
 def _call_local_transformers(messages: list[dict[str, str]]) -> tuple[dict[str, Any] | None, dict]:
+    """Run one chat-style generation request with the local Transformers model."""
     tokenizer, model = _load_local_model()
     settings = get_settings()
 
     start = time.perf_counter()
     try:
+        # Qwen3 supports enable_thinking=False; older tokenizers may not.
         prompt = tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -61,6 +74,8 @@ def _call_local_transformers(messages: list[dict[str, str]]) -> tuple[dict[str, 
 
     inputs = tokenizer([prompt], return_tensors="pt")
     device = next(model.parameters()).device
+    # Inputs must be on the same device as the model. On this workstation that
+    # is normally cuda when the RTX GPU is visible.
     inputs = {key: value.to(device) for key, value in inputs.items()}
     output = model.generate(
         **inputs,
@@ -78,6 +93,7 @@ def _call_local_transformers(messages: list[dict[str, str]]) -> tuple[dict[str, 
 
 
 def _load_local_model():
+    """Load the local model once, preferring CUDA when PyTorch can access it."""
     global _LOCAL_MODEL, _LOCAL_TOKENIZER
     if _LOCAL_MODEL is not None and _LOCAL_TOKENIZER is not None:
         return _LOCAL_TOKENIZER, _LOCAL_MODEL
@@ -96,6 +112,8 @@ def _load_local_model():
     )
     if use_cuda:
         _LOCAL_MODEL.to("cuda")
+    # Some model configs include sampling defaults. The app uses deterministic
+    # generation, so clear those to avoid warnings and inconsistent outputs.
     _LOCAL_MODEL.generation_config.temperature = None
     _LOCAL_MODEL.generation_config.top_p = None
     _LOCAL_MODEL.generation_config.top_k = None
@@ -104,6 +122,11 @@ def _load_local_model():
 
 
 def _extract_json_object(text: str) -> dict[str, Any] | None:
+    """Extract the first JSON object from model text.
+
+    Local models sometimes add surrounding prose or Markdown. The analyzer will
+    ignore None and keep the rule-based result when JSON cannot be parsed.
+    """
     start = text.find("{")
     end = text.rfind("}")
     if start == -1 or end == -1 or end <= start:
