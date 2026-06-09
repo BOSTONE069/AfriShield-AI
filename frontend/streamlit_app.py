@@ -1,4 +1,4 @@
-"""Streamlit dashboard for the AfriShield AI threat intelligence console.
+"""Streamlit dashboard for the African Cyber Defense threat intelligence console.
 
 The page is organized like a lightweight SOC workspace:
 - sidebar: runtime and demo queue
@@ -32,7 +32,10 @@ SEVERITY_COLORS = {
 }
 
 
-st.set_page_config(page_title="AfriShield AI", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="African Cyber Defense", layout="wide", initial_sidebar_state="expanded")
+
+
+APP_THEME = st.sidebar.selectbox("Choose app theme", ["Light", "Dark"], key="app_theme")
 
 
 def esc(value: object) -> str:
@@ -40,7 +43,7 @@ def esc(value: object) -> str:
     return html.escape(str(value))
 
 
-def inject_styles() -> None:
+def inject_styles(app_theme: str) -> None:
     """Inject custom CSS for a threat-intelligence-console visual style."""
     st.markdown(
         """
@@ -498,6 +501,113 @@ def inject_styles() -> None:
         """,
         unsafe_allow_html=True,
     )
+    inject_theme_overrides(app_theme)
+
+
+def inject_theme_overrides(app_theme: str) -> None:
+    """Apply light/dark theme overrides to the custom Streamlit CSS.
+
+    Streamlit's built-in app theme does not automatically rewrite custom CSS,
+    so this selector explicitly updates the dashboard surfaces and form fields.
+    """
+    if app_theme == "Dark":
+        st.markdown(
+            """
+            <style>
+            .stApp {
+                background: #0f172a !important;
+                color: #e5edf5 !important;
+            }
+
+            .console-header,
+            .runtime-statusbar,
+            .workspace-panel,
+            .queue-item,
+            .signal,
+            .empty-state,
+            .subtitlebar {
+                background: #111827 !important;
+                border-color: #334155 !important;
+                color: #e5edf5 !important;
+            }
+
+            .console-title,
+            .verdict,
+            .case-id,
+            .signal-value,
+            .runtime-chip-value,
+            .queue-title {
+                color: #f8fafc !important;
+            }
+
+            .console-subtitle,
+            .subtitlebar-text,
+            .summary,
+            .case-meta,
+            .queue-meta,
+            .signal-label,
+            .runtime-chip-label,
+            .section-label {
+                color: #b6c2d1 !important;
+            }
+
+            .runtime-chip {
+                background: #172033 !important;
+                border-color: #334155 !important;
+            }
+
+            div[data-testid="stSelectbox"] label,
+            div[data-testid="stTextInput"] label,
+            div[data-testid="stTextArea"] label,
+            div[data-testid="stFileUploader"] label {
+                color: #e5edf5 !important;
+            }
+
+            div[data-testid="stTextArea"] textarea,
+            div[data-testid="stTextInput"] input,
+            div[data-baseweb="select"] > div,
+            div[data-testid="stFileUploaderDropzone"] {
+                background: #111827 !important;
+                color: #f8fafc !important;
+                border-color: #475569 !important;
+            }
+
+            div[data-baseweb="select"] span,
+            div[data-baseweb="select"] input,
+            div[data-testid="stFileUploaderDropzone"] * {
+                color: #f8fafc !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            """
+            <style>
+            .stApp {
+                background: #eef2f6 !important;
+                color: #111827 !important;
+            }
+
+            div[data-testid="stTextArea"] textarea,
+            div[data-testid="stTextInput"] input,
+            div[data-baseweb="select"] > div,
+            div[data-testid="stFileUploaderDropzone"] {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                border-color: #cbd5e1 !important;
+            }
+
+            div[data-baseweb="select"] span,
+            div[data-baseweb="select"] input,
+            div[data-testid="stFileUploaderDropzone"] * {
+                color: #0f172a !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 @st.cache_data(ttl=30)
@@ -558,7 +668,7 @@ def api_export_pdf(report_markdown: str) -> bytes:
     """Ask the backend to convert Markdown report text into PDF bytes."""
     response = requests.post(
         f"{API_BASE}/api/report/pdf",
-        json={"title": "AfriShield AI Incident Report", "report_markdown": report_markdown},
+        json={"title": "African Cyber Defense Incident Report", "report_markdown": report_markdown},
         timeout=30,
     )
     response.raise_for_status()
@@ -591,7 +701,7 @@ def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> No
         st.markdown(
             """
             <div class="sidebar-brand">
-                <div class="brand-title">AfriShield AI</div>
+                <div class="brand-title">African Cyber Defense</div>
                 <div class="brand-subtitle">Threat Intelligence Operations</div>
             </div>
             """,
@@ -623,7 +733,7 @@ def render_topbar(runtime: dict[str, Any]) -> None:
     st.markdown(
         f"""
         <div class="console-header">
-            <div class="console-title">Threat Intelligence Console</div>
+            <div class="console-title">African Cyber Defense</div>
             <div class="console-subtitle">Case triage, IOC extraction, ATT&CK mapping, and SOC reporting</div>
         </div>
         <div class="runtime-statusbar">
@@ -861,7 +971,7 @@ def render_empty_queue(samples: list[dict[str, Any]]) -> None:
 
 # Page composition starts here. Streamlit reruns the file top-to-bottom after
 # every interaction, so persistent analysis state lives in st.session_state.
-inject_styles()
+inject_styles(APP_THEME)
 runtime = load_runtime()
 samples = load_samples()
 render_sidebar(runtime, samples)
