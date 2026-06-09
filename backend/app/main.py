@@ -1,12 +1,15 @@
 """FastAPI entry point for AfriShield AI."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.analyzer import analyze_threat
 from backend.app.config import get_settings
+from backend.app.document_parser import extract_document_text
+from backend.app.feedback import save_feedback
+from backend.app.pdf_export import markdown_to_pdf_bytes
 from backend.app.runtime_metrics import runtime_payload
-from backend.app.schemas import AnalyzeRequest, AnalyzeResponse
+from backend.app.schemas import AnalyzeRequest, AnalyzeResponse, FeedbackRequest, FeedbackResponse, ReportExportRequest
 from backend.app.samples import load_samples
 
 
@@ -46,3 +49,28 @@ def runtime() -> dict:
 def samples() -> list[dict]:
     """Return bundled demo cases used by the dashboard sample queue."""
     return load_samples()
+
+
+@app.post("/api/feedback", response_model=FeedbackResponse)
+def feedback(request: FeedbackRequest) -> dict:
+    """Persist analyst feedback for later review and model evaluation."""
+    return save_feedback(request.model_dump(mode="json"))
+
+
+@app.post("/api/report/pdf")
+def export_pdf(request: ReportExportRequest) -> Response:
+    """Convert a Markdown incident report into a downloadable PDF."""
+    pdf_bytes = markdown_to_pdf_bytes(request.title, request.report_markdown)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="afrishield-incident-report.pdf"'},
+    )
+
+
+@app.post("/api/document/extract")
+async def document_extract(file: UploadFile = File(...)) -> dict:
+    """Extract text from an uploaded TXT/MD/EML/LOG/PDF document."""
+    content = await file.read()
+    text = extract_document_text(file.filename or "uploaded-document", content)
+    return {"filename": file.filename, "content": text}

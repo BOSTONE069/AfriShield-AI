@@ -7,6 +7,7 @@ MITRE_MAPPINGS = {
         {
             "tactic": "Initial Access",
             "technique": "Phishing",
+            "technique_id": "T1566",
             "explanation": "The content attempts to lure the user into interacting with a deceptive message or link.",
         }
     ],
@@ -14,11 +15,13 @@ MITRE_MAPPINGS = {
         {
             "tactic": "Initial Access",
             "technique": "Phishing",
+            "technique_id": "T1566",
             "explanation": "The message uses a lure to direct the user toward a credential capture flow.",
         },
         {
             "tactic": "Credential Access",
             "technique": "Credential Harvesting",
+            "technique_id": "T1556",
             "explanation": "The wording asks the user to verify, confirm, or submit account information.",
         },
     ],
@@ -26,6 +29,7 @@ MITRE_MAPPINGS = {
         {
             "tactic": "Execution",
             "technique": "User Execution",
+            "technique_id": "T1204",
             "explanation": "The user is encouraged to open or enable content that may execute malicious code.",
         }
     ],
@@ -33,11 +37,13 @@ MITRE_MAPPINGS = {
         {
             "tactic": "Collection",
             "technique": "Email Collection",
+            "technique_id": "T1114",
             "explanation": "BEC activity often relies on mailbox access and payment context gathered from email.",
         },
         {
             "tactic": "Impact",
             "technique": "Financial Theft",
+            "technique_id": "T1657",
             "explanation": "The message attempts to redirect or authorize fraudulent payment activity.",
         },
     ],
@@ -45,6 +51,7 @@ MITRE_MAPPINGS = {
         {
             "tactic": "Initial Access",
             "technique": "Social Engineering",
+            "technique_id": "T1566",
             "explanation": "The message applies persuasion, urgency, or impersonation to influence user action.",
         }
     ],
@@ -52,6 +59,7 @@ MITRE_MAPPINGS = {
         {
             "tactic": "Impact",
             "technique": "Influence",
+            "technique_id": "TA0040",
             "explanation": "The content may aim to manipulate perception or behavior at scale.",
         }
     ],
@@ -59,6 +67,7 @@ MITRE_MAPPINGS = {
         {
             "tactic": "Reconnaissance",
             "technique": "Gather Victim Information",
+            "technique_id": "T1592",
             "explanation": "Suspicious content may be probing for user interaction or trust signals.",
         }
     ],
