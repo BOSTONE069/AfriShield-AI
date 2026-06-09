@@ -49,6 +49,31 @@ def call_chat_json(messages: list[dict[str, str]], temperature: float = 0.1) -> 
     return json.loads(content), {"latency_seconds": latency, "tokens_per_second": tokens_per_second}
 
 
+def call_chat_text(messages: list[dict[str, str]], temperature: float = 0.2) -> tuple[str | None, dict]:
+    """Call the configured LLM provider and return raw text plus metrics."""
+    settings = get_settings()
+    if not settings.use_llm:
+        return None, {"latency_seconds": 0.0, "tokens_per_second": 0.0}
+    if settings.llm_provider == "local_transformers":
+        return _call_local_transformers_text(messages)
+    if not settings.llm_api_base:
+        return None, {"latency_seconds": 0.0, "tokens_per_second": 0.0}
+
+    url = settings.llm_api_base.rstrip("/") + "/chat/completions"
+    headers = {"Authorization": f"Bearer {settings.llm_api_key}", "Content-Type": "application/json"}
+    payload = {"model": settings.llm_model, "messages": messages, "temperature": temperature}
+    start = time.perf_counter()
+    response = requests.post(url, headers=headers, json=payload, timeout=45)
+    latency = round(time.perf_counter() - start, 3)
+    response.raise_for_status()
+    data = response.json()
+    content = data["choices"][0]["message"]["content"]
+    usage = data.get("usage", {})
+    completion_tokens = usage.get("completion_tokens") or usage.get("total_tokens") or 0
+    tokens_per_second = round(completion_tokens / latency, 2) if latency and completion_tokens else 0.0
+    return content.strip(), {"latency_seconds": latency, "tokens_per_second": tokens_per_second}
+
+
 # Local model objects are cached in memory after the first request. This avoids
 # reloading model weights for every analysis call.
 _LOCAL_MODEL = None
@@ -90,6 +115,34 @@ def _call_local_transformers(messages: list[dict[str, str]]) -> tuple[dict[str, 
     tokens_per_second = round(tokens / latency, 2) if latency and tokens else 0.0
 
     return _extract_json_object(text), {"latency_seconds": latency, "tokens_per_second": tokens_per_second}
+
+
+def _call_local_transformers_text(messages: list[dict[str, str]]) -> tuple[str | None, dict]:
+    """Run local model generation and return the text without JSON parsing."""
+    text, metrics = _generate_local_text(messages)
+    return text, metrics
+
+
+def _generate_local_text(messages: list[dict[str, str]]) -> tuple[str | None, dict]:
+    """Shared local generation helper for JSON and Markdown responses."""
+    tokenizer, model = _load_local_model()
+    settings = get_settings()
+
+    start = time.perf_counter()
+    try:
+        prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
+    except TypeError:
+        prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer([prompt], return_tensors="pt")
+    device = next(model.parameters()).device
+    inputs = {key: value.to(device) for key, value in inputs.items()}
+    output = model.generate(**inputs, max_new_tokens=settings.local_max_new_tokens, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+    generated = output[0][inputs["input_ids"].shape[1] :]
+    text = tokenizer.decode(generated, skip_special_tokens=True).strip()
+    latency = round(time.perf_counter() - start, 3)
+    tokens = int(generated.shape[0])
+    tokens_per_second = round(tokens / latency, 2) if latency and tokens else 0.0
+    return text, {"latency_seconds": latency, "tokens_per_second": tokens_per_second}
 
 
 def _load_local_model():
