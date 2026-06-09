@@ -11,13 +11,18 @@ This module is the backend pipeline:
 
 import json
 
-from backend.app.ioc_extractor import extract_iocs
-from backend.app.llm_client import call_chat_json
-from backend.app.mitre_mapper import map_to_mitre
-from backend.app.report_generator import generate_report
-from backend.app.risk_scoring import calculate_risk_score, severity_from_score
+from backend.app.agents import (
+    ClassificationAgent,
+    EnrichmentAgent,
+    IOCAgent,
+    MitreAgent,
+    PreprocessingAgent,
+    ReportAgent,
+    RiskAgent,
+)
+from backend.app.config import get_settings
+from backend.app.llm_client import call_chat_json, call_chat_text
 from backend.app.runtime_metrics import Timer, runtime_payload
-from backend.app.threat_classifier import classify_threat
 
 
 # These allow-lists protect the API schema from loose model output. If the LLM
@@ -38,13 +43,22 @@ SEVERITY_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3}
 
 def analyze_threat(input_type: str, content: str, context: str = "Kenya") -> dict:
     """Run the complete analysis pipeline and return the API response object."""
-    normalized = " ".join(content.strip().split())
+    settings = get_settings()
+    preprocessing_agent = PreprocessingAgent()
+    ioc_agent = IOCAgent()
+    classification_agent = ClassificationAgent()
+    enrichment_agent = EnrichmentAgent()
+    risk_agent = RiskAgent()
+    mitre_agent = MitreAgent()
+    report_agent = ReportAgent()
+
+    normalized = preprocessing_agent.run(content)
 
     with Timer() as timer:
         # The rule-based pipeline always runs so the app remains useful even
         # when the model is unavailable or emits invalid JSON.
-        iocs = extract_iocs(normalized)
-        classification = classify_threat(normalized, iocs)
+        iocs = ioc_agent.run(normalized)
+        classification = classification_agent.run(normalized, iocs)
         llm_analysis, llm_metrics = _try_llm_classification(normalized, context, iocs)
 
         threat_type = classification.threat_type
@@ -60,35 +74,54 @@ def analyze_threat(input_type: str, content: str, context: str = "Kenya") -> dic
             evidence = _valid_string_list(llm_analysis.get("evidence"), evidence)
             recommended_actions = _valid_string_list(llm_analysis.get("recommended_actions"), recommended_actions)
 
-        risk_score = calculate_risk_score(normalized, iocs, threat_type, evidence)
-        severity = severity_from_score(risk_score)
+        enrichment = enrichment_agent.run(iocs)
+        risk_score, severity = risk_agent.run(normalized, iocs, threat_type, evidence)
         if llm_analysis and llm_analysis.get("severity") in ALLOWED_SEVERITIES:
             # A small local model may understate risk. Never let it downgrade
             # severity below what the scoring engine calculated.
             severity = _max_severity(severity, llm_analysis["severity"])
 
-        mitre_mapping = map_to_mitre(threat_type)
-        report_markdown = generate_report(
+        mitre_mapping = mitre_agent.run(threat_type)
+        deterministic_report = report_agent.run(
             input_type,
             context,
             threat_type,
             severity,
             risk_score,
             iocs,
+            enrichment,
             mitre_mapping,
             summary,
             evidence,
             recommended_actions,
         )
+        report_markdown, report_metrics = _try_llm_report(
+            settings.use_llm_reports,
+            deterministic_report,
+            {
+                "input_type": input_type,
+                "context": context,
+                "threat_type": threat_type,
+                "severity": severity,
+                "risk_score": risk_score,
+                "iocs": iocs,
+                "enrichment": enrichment,
+                "mitre_mapping": mitre_mapping,
+                "summary": summary,
+                "evidence": evidence,
+                "recommended_actions": recommended_actions,
+            },
+        )
 
-    latency = llm_metrics.get("latency_seconds") or getattr(timer, "latency_seconds", 0.0)
-    tokens_per_second = llm_metrics.get("tokens_per_second", 0.0)
+    latency = max(llm_metrics.get("latency_seconds", 0.0), report_metrics.get("latency_seconds", 0.0), getattr(timer, "latency_seconds", 0.0))
+    tokens_per_second = max(llm_metrics.get("tokens_per_second", 0.0), report_metrics.get("tokens_per_second", 0.0))
 
     return {
         "threat_type": threat_type,
         "severity": severity,
         "risk_score": risk_score,
         "iocs": iocs,
+        "enrichment": enrichment,
         "mitre_mapping": mitre_mapping,
         "summary": summary,
         "evidence": evidence,
@@ -130,6 +163,35 @@ Context:
     except Exception:
         # The MVP should keep working during demos even if model inference fails.
         return None, {"latency_seconds": 0.0, "tokens_per_second": 0.0}
+
+
+def _try_llm_report(enabled: bool, fallback_report: str, analysis: dict) -> tuple[str, dict]:
+    """Ask the LLM to write the report, falling back to the deterministic one."""
+    if not enabled:
+        return fallback_report, {"latency_seconds": 0.0, "tokens_per_second": 0.0}
+    system = "You are AfriShield AI, a SOC reporting assistant. Write concise Markdown only."
+    user = f"""
+Generate a clear incident report in Markdown using these sections:
+1. Executive Summary
+2. Threat Classification
+3. Risk Score
+4. Indicators of Compromise
+5. Threat Feed Enrichment
+6. MITRE ATT&CK Mapping
+7. Evidence
+8. Recommended Response Actions
+9. Analyst Notes
+
+Threat analysis JSON:
+{json.dumps(analysis)}
+"""
+    try:
+        report, metrics = call_chat_text([{"role": "system", "content": system}, {"role": "user", "content": user}])
+    except Exception:
+        return fallback_report, {"latency_seconds": 0.0, "tokens_per_second": 0.0}
+    if not report or "# " not in report:
+        return fallback_report, metrics
+    return report, metrics
 
 
 def _valid_threat_type(value: object, fallback: str) -> str:
