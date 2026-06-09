@@ -36,6 +36,7 @@ class Settings:
         "/home/th3c0nf3d3r4t3/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca",
     )
     local_max_new_tokens: int = int(getenv("LOCAL_MAX_NEW_TOKENS", "220"))
+    use_llm_reports: bool = getenv("USE_LLM_REPORTS", "true").lower() in {"1", "true", "yes"}
     runtime_gpu: str = getenv("RUNTIME_GPU", "auto")
     runtime_cloud: str = getenv("RUNTIME_CLOUD", "AMD Developer Cloud")
     runtime_backend: str = getenv("RUNTIME_BACKEND", "Transformers local")
