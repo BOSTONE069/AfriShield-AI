@@ -43,7 +43,19 @@ class MitreMapping(BaseModel):
 
     tactic: str
     technique: str
+    technique_id: str = ""
     explanation: str = ""
+
+
+class EnrichmentFinding(BaseModel):
+    """Local threat-feed or heuristic enrichment for one observable."""
+
+    observable_type: str
+    value: str
+    source: str
+    verdict: str
+    confidence: str
+    details: str
 
 
 class AnalyzeResponse(BaseModel):
@@ -53,9 +65,34 @@ class AnalyzeResponse(BaseModel):
     severity: Severity
     risk_score: int = Field(..., ge=0, le=100)
     iocs: IOCSet
+    enrichment: list[EnrichmentFinding] = []
     mitre_mapping: list[MitreMapping]
     summary: str
     evidence: list[str]
     recommended_actions: list[str]
     report_markdown: str
     runtime: dict
+
+
+class FeedbackRequest(BaseModel):
+    """Analyst feedback saved from the dashboard after reviewing a case."""
+
+    case_id: str
+    verdict: Literal["correct", "incorrect", "needs_review"]
+    rating: int = Field(..., ge=1, le=5)
+    analyst_note: str = ""
+    analysis: AnalyzeResponse | None = None
+
+
+class FeedbackResponse(BaseModel):
+    """Acknowledgement returned after feedback is stored."""
+
+    status: str
+    feedback_id: str
+
+
+class ReportExportRequest(BaseModel):
+    """Markdown report payload converted to PDF by /api/report/pdf."""
+
+    title: str = "AfriShield AI Incident Report"
+    report_markdown: str = Field(..., min_length=1)
