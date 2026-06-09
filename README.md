@@ -82,6 +82,10 @@ RUNTIME_FRAMEWORK=ROCm + PyTorch
 
 Set `USE_LLM=false` if you want deterministic rules-only analysis.
 
+For faster local demos, keep `USE_LLM_REPORTS=false`. The backend will still
+use the model for classification enrichment, but the report will be generated
+from a deterministic template instead of making a second model call.
+
 ## API Example
 
 ```bash
