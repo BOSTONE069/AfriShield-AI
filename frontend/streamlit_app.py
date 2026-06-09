@@ -35,9 +35,6 @@ SEVERITY_COLORS = {
 st.set_page_config(page_title="African Cyber Defense", layout="wide", initial_sidebar_state="expanded")
 
 
-APP_THEME = st.sidebar.selectbox("Choose app theme", ["Light", "Dark"], key="app_theme")
-
-
 def esc(value: object) -> str:
     """Escape dynamic values before embedding them in custom HTML blocks."""
     return html.escape(str(value))
@@ -159,48 +156,6 @@ def inject_styles(app_theme: str) -> None:
             line-height: 1.45;
             margin-top: 6px;
             overflow-wrap: anywhere;
-        }
-
-        .runtime-statusbar {
-            background: #f8fafc;
-            border: 1px solid #d7dee8;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 14px;
-            overflow: visible;
-        }
-
-        .runtime-chip-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 8px;
-        }
-
-        .runtime-chip {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 10px 12px;
-            min-height: 58px;
-            overflow: visible;
-        }
-
-        .runtime-chip-label {
-            color: #334155;
-            font-size: 0.72rem;
-            font-weight: 820;
-            text-transform: uppercase;
-            line-height: 1.2;
-        }
-
-        .runtime-chip-value {
-            color: #0f172a;
-            font-size: 0.86rem;
-            font-weight: 760;
-            line-height: 1.28;
-            margin-top: 5px;
-            overflow-wrap: anywhere;
-            white-space: normal;
         }
 
         .shell-band {
@@ -379,6 +334,58 @@ def inject_styles(app_theme: str) -> None:
             overflow-wrap: anywhere;
         }
 
+        .friendly-result {
+            background: #ffffff;
+            border: 1px solid #d7dee8;
+            border-radius: 8px;
+            padding: 18px;
+            margin-top: 14px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .friendly-risk {
+            display: inline-flex;
+            align-items: center;
+            background: var(--friendly-risk-bg);
+            color: var(--friendly-risk-color);
+            border: 1px solid var(--friendly-risk-color);
+            border-radius: 999px;
+            padding: 7px 11px;
+            font-size: 0.86rem;
+            font-weight: 840;
+            margin-bottom: 10px;
+        }
+
+        .friendly-title {
+            color: #0f172a;
+            font-size: 1.28rem;
+            font-weight: 840;
+            line-height: 1.25;
+            margin-bottom: 6px;
+        }
+
+        .friendly-copy {
+            color: #334155;
+            line-height: 1.55;
+            margin-bottom: 12px;
+        }
+
+        .next-step-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .next-step {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #1f2937;
+            font-weight: 650;
+            line-height: 1.4;
+        }
+
         .empty-state {
             border: 1px dashed #aab6c5;
             background: #f8fafc;
@@ -490,7 +497,6 @@ def inject_styles(app_theme: str) -> None:
                 margin-top: 12px;
             }
 
-            .runtime-chip-grid,
             .band-grid,
             .signal-strip,
             .risk-grid {
@@ -520,7 +526,6 @@ def inject_theme_overrides(app_theme: str) -> None:
             }
 
             .console-header,
-            .runtime-statusbar,
             .workspace-panel,
             .queue-item,
             .signal,
@@ -535,8 +540,8 @@ def inject_theme_overrides(app_theme: str) -> None:
             .verdict,
             .case-id,
             .signal-value,
-            .runtime-chip-value,
-            .queue-title {
+            .queue-title,
+            .friendly-title {
                 color: #f8fafc !important;
             }
 
@@ -546,14 +551,16 @@ def inject_theme_overrides(app_theme: str) -> None:
             .case-meta,
             .queue-meta,
             .signal-label,
-            .runtime-chip-label,
-            .section-label {
+            .section-label,
+            .friendly-copy {
                 color: #b6c2d1 !important;
             }
 
-            .runtime-chip {
+            .friendly-result,
+            .next-step {
                 background: #172033 !important;
                 border-color: #334155 !important;
+                color: #e5edf5 !important;
             }
 
             div[data-testid="stSelectbox"] label,
@@ -647,7 +654,9 @@ def api_post_analyze(input_type: str, content: str, context: str) -> dict[str, A
     response = requests.post(
         f"{API_BASE}/api/analyze",
         json={"input_type": input_type, "content": content, "context": context},
-        timeout=60,
+        # Local model startup can take longer than ordinary HTTP requests,
+        # especially on the first analysis after the backend starts.
+        timeout=180,
     )
     response.raise_for_status()
     return response.json()
@@ -707,14 +716,7 @@ def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> No
             """,
             unsafe_allow_html=True,
         )
-        st.markdown("#### Runtime")
-        runtime_row("Provider", runtime.get("llm_provider", "local_transformers"))
-        runtime_row("Model", runtime.get("model", "Qwen/Qwen3-0.6B"))
-        runtime_row("Backend", runtime.get("backend", "Transformers local"))
-        runtime_row("Framework", runtime.get("framework", "PyTorch"))
-        runtime_row("Compute", runtime.get("gpu", "Local CPU"))
-        runtime_row("Tokens/sec", runtime.get("tokens_per_second", 0))
-        st.markdown("#### Sample Queue")
+        st.markdown("#### Try an example")
         for sample in samples[:5]:
             st.markdown(
                 f"""
@@ -725,40 +727,22 @@ def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> No
                 """,
                 unsafe_allow_html=True,
             )
+        with st.expander("System status"):
+            runtime_row("Provider", runtime.get("llm_provider", "local_transformers"))
+            runtime_row("Model", runtime.get("model", "Qwen/Qwen3-0.6B"))
+            runtime_row("Backend", runtime.get("backend", "Transformers local"))
+            runtime_row("Framework", runtime.get("framework", "PyTorch"))
+            runtime_row("Compute", runtime.get("gpu", "Local CPU"))
+            runtime_row("Tokens/sec", runtime.get("tokens_per_second", 0))
 
 
 def render_topbar(runtime: dict[str, Any]) -> None:
-    """Render the console title and a separate full runtime status bar."""
-    model_state = "LLM ACTIVE" if runtime.get("llm_enabled") else "RULES MODE"
+    """Render a simple common-user header."""
     st.markdown(
-        f"""
+        """
         <div class="console-header">
             <div class="console-title">African Cyber Defense</div>
-            <div class="console-subtitle">Case triage, IOC extraction, ATT&CK mapping, and SOC reporting</div>
-        </div>
-        <div class="runtime-statusbar">
-            <div class="runtime-chip-grid">
-                <div class="runtime-chip">
-                    <div class="runtime-chip-label">Runtime</div>
-                    <div class="runtime-chip-value">{esc(model_state)}</div>
-                </div>
-                <div class="runtime-chip">
-                    <div class="runtime-chip-label">Provider</div>
-                    <div class="runtime-chip-value">{esc(runtime.get("llm_provider", "local_transformers"))}</div>
-                </div>
-                <div class="runtime-chip">
-                    <div class="runtime-chip-label">Model</div>
-                    <div class="runtime-chip-value">{esc(runtime.get("model", "Qwen/Qwen3-0.6B"))}</div>
-                </div>
-                <div class="runtime-chip">
-                    <div class="runtime-chip-label">Backend</div>
-                    <div class="runtime-chip-value">{esc(runtime.get("backend", "Transformers local"))}</div>
-                </div>
-                <div class="runtime-chip">
-                    <div class="runtime-chip-label">Compute</div>
-                    <div class="runtime-chip-value">{esc(runtime.get("gpu", "Local CPU"))}</div>
-                </div>
-            </div>
+            <div class="console-subtitle">Paste a suspicious email, SMS, WhatsApp message, or link. We will explain the risk in plain language and provide a report you can share with IT.</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -766,8 +750,8 @@ def render_topbar(runtime: dict[str, Any]) -> None:
 
 
 def render_band(result: dict[str, Any] | None, runtime: dict[str, Any]) -> None:
-    """Render the dark command band that summarizes the current case state."""
-    threat = result["threat_type"].replace("_", " ") if result else "Awaiting Submission"
+    """Render a compact plain-language status band."""
+    threat = plain_risk_label(result) if result else "Not checked yet"
     severity = result["severity"] if result else "Not Scored"
     score = f"{result['risk_score']}/100" if result else "Pending"
     latency = f"{result.get('runtime', runtime).get('latency_seconds', 0)}s" if result else f"{runtime.get('latency_seconds', 0)}s"
@@ -776,11 +760,11 @@ def render_band(result: dict[str, Any] | None, runtime: dict[str, Any]) -> None:
         <div class="shell-band">
             <div class="band-grid">
                 <div class="band-item" style="border-left-color:#2563eb;">
-                    <div class="band-label">Verdict</div>
+                    <div class="band-label">Result</div>
                     <div class="band-value">{esc(threat)}</div>
                 </div>
                 <div class="band-item" style="border-left-color:#d97706;">
-                    <div class="band-label">Severity</div>
+                    <div class="band-label">Risk Level</div>
                     <div class="band-value">{esc(severity)}</div>
                 </div>
                 <div class="band-item" style="border-left-color:#0f766e;">
@@ -788,7 +772,7 @@ def render_band(result: dict[str, Any] | None, runtime: dict[str, Any]) -> None:
                     <div class="band-value">{esc(score)}</div>
                 </div>
                 <div class="band-item" style="border-left-color:#7c3aed;">
-                    <div class="band-label">Inference Latency</div>
+                    <div class="band-label">Check Time</div>
                     <div class="band-value">{esc(latency)}</div>
                 </div>
             </div>
@@ -862,6 +846,77 @@ def severity_badge(severity: str) -> str:
     return (
         f'<span class="severity-badge" style="--severity-color:{color};'
         f'--severity-bg:{color}18;">{esc(severity)}</span>'
+    )
+
+
+def plain_risk_label(result: dict[str, Any] | None) -> str:
+    """Return a common-user risk label instead of a SOC classification."""
+    if not result:
+        return "Not checked yet"
+    severity = result.get("severity", "LOW")
+    labels = {
+        "LOW": "Looks safe",
+        "MEDIUM": "Suspicious",
+        "HIGH": "Dangerous",
+        "CRITICAL": "Very dangerous",
+    }
+    return labels.get(severity, "Needs review")
+
+
+def plain_risk_explanation(result: dict[str, Any]) -> str:
+    """Explain the analyzer result without relying on security jargon."""
+    threat_type = result.get("threat_type", "UNKNOWN_SUSPICIOUS").replace("_", " ").lower()
+    severity = result.get("severity", "LOW")
+    if severity == "LOW":
+        return "We did not find strong signs of a scam or attack in this message."
+    if severity == "MEDIUM":
+        return "This message has warning signs. Treat it carefully until someone verifies it."
+    return f"This message looks like {threat_type}. It may be trying to trick someone into clicking a link, sharing private information, or sending money."
+
+
+def top_next_steps(result: dict[str, Any]) -> list[str]:
+    """Return the most useful next steps for a non-technical user."""
+    actions = result.get("recommended_actions") or []
+    if actions:
+        return actions[:4]
+    return [
+        "Do not click suspicious links.",
+        "Do not enter passwords or personal details.",
+        "Report the message to your IT or security team.",
+    ]
+
+
+def found_links_summary(result: dict[str, Any]) -> str:
+    """Summarize extracted links/domains in one readable sentence."""
+    iocs = result.get("iocs", {})
+    domains = iocs.get("domains") or []
+    urls = iocs.get("urls") or []
+    if domains:
+        return "Link or domain found: " + ", ".join(domains[:3])
+    if urls:
+        return "Link found: " + ", ".join(urls[:2])
+    return "No links or domains were found in the submitted message."
+
+
+def render_friendly_result(result: dict[str, Any]) -> None:
+    """Render the first result card for common users before technical details."""
+    severity = result.get("severity", "LOW")
+    color = SEVERITY_COLORS.get(severity, "#64748b")
+    steps = "".join(f'<div class="next-step">{esc(step)}</div>' for step in top_next_steps(result))
+    st.markdown(
+        f"""
+        <div class="friendly-result">
+            <div class="friendly-risk" style="--friendly-risk-color:{color}; --friendly-risk-bg:{color}18;">
+                Risk: {esc(plain_risk_label(result))}
+            </div>
+            <div class="friendly-title">What this means</div>
+            <div class="friendly-copy">{esc(plain_risk_explanation(result))}</div>
+            <div class="friendly-copy">{esc(found_links_summary(result))}</div>
+            <div class="friendly-title">What to do next</div>
+            <div class="next-step-list">{steps}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 
@@ -958,20 +1013,20 @@ def render_empty_queue(samples: list[dict[str, Any]]) -> None:
     """Render the queue preview shown before any case has been analyzed."""
     preview_rows = [
         {
-            "Case": sample.get("name", "Sample"),
-            "Input": sample.get("input_type", "text").upper(),
-            "Region": sample.get("context", "Kenya"),
-            "Status": "Ready",
+            "Example": sample.get("name", "Sample"),
+            "Type": sample.get("input_type", "text").upper(),
+            "Context": sample.get("context", "Kenya"),
+            "Ready to check": "Yes",
         }
         for sample in samples
     ]
-    st.markdown('<div class="section-label">Triage Queue</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Examples you can try</div>', unsafe_allow_html=True)
     st.dataframe(pd.DataFrame(preview_rows), width="stretch", hide_index=True)
 
 
 # Page composition starts here. Streamlit reruns the file top-to-bottom after
 # every interaction, so persistent analysis state lives in st.session_state.
-inject_styles(APP_THEME)
+inject_styles("Light")
 runtime = load_runtime()
 samples = load_samples()
 render_sidebar(runtime, samples)
@@ -980,22 +1035,38 @@ render_topbar(runtime)
 result = st.session_state.get("analysis_result")
 render_band(result, runtime)
 
-sample_names = ["Custom investigation"] + [sample["name"] for sample in samples]
+sample_names = ["Paste my own message"] + [sample["name"] for sample in samples]
 left, right = st.columns([0.82, 1.18], gap="large")
 
 # Evidence intake panel: choose a sample or paste a new suspicious message.
 with left:
-    st.markdown('<div class="section-label">Evidence Intake</div>', unsafe_allow_html=True)
-    selected_sample = st.selectbox("Case Template", sample_names)
+    st.markdown('<div class="section-label">Check a suspicious message</div>', unsafe_allow_html=True)
+    st.caption("Paste an email, SMS, WhatsApp message, or suspicious link. We will check for scam signs, risky links, and impersonation.")
+    selected_sample = st.selectbox("Try an example or paste your own", sample_names)
     selected = next((sample for sample in samples if sample["name"] == selected_sample), None)
+
+    st.markdown('<div class="section-label">Quick examples</div>', unsafe_allow_html=True)
+    example_cols = st.columns(2)
+    for index, sample in enumerate(samples[:4]):
+        with example_cols[index % 2]:
+            if st.button(sample["name"], width="stretch", key=f"sample_button_{index}"):
+                st.session_state.evidence_input = sample["content"]
+                st.session_state.context_input = sample.get("context", "Kenya")
+                st.session_state.channel_select = sample.get("input_type", "text")
+                st.session_state.upload_text = ""
+                st.rerun()
+
+    default_input_type = st.session_state.get("channel_select") or (selected["input_type"] if selected else "email")
     input_type = st.selectbox(
-        "Channel",
+        "Message type",
         INPUT_TYPES,
-        index=INPUT_TYPES.index(selected["input_type"]) if selected else 0,
+        index=INPUT_TYPES.index(default_input_type) if default_input_type in INPUT_TYPES else 0,
+        key="channel_select",
     )
-    context = st.text_input("Context", value=selected.get("context", "Kenya") if selected else "Kenya")
-    uploaded_file = st.file_uploader("Upload Evidence Document", type=["txt", "md", "eml", "log", "pdf"])
-    if uploaded_file is not None and st.button("Extract Document Text", width="stretch"):
+    default_context = st.session_state.get("context_input") or (selected.get("context", "Kenya") if selected else "Kenya")
+    context = st.text_input("Country or organization context", value=default_context, key="context_input")
+    uploaded_file = st.file_uploader("Upload a message file (optional)", type=["txt", "md", "eml", "log", "pdf"])
+    if uploaded_file is not None and st.button("Use text from uploaded file", width="stretch"):
         with st.spinner("Extracting document text..."):
             try:
                 st.session_state.upload_text = api_extract_document(uploaded_file.name, uploaded_file.getvalue())
@@ -1004,32 +1075,31 @@ with left:
                 st.session_state.upload_error = str(exc)
     if st.session_state.get("upload_error"):
         st.warning(f"Document extraction failed: {st.session_state.upload_error}")
-    default_content = st.session_state.get("upload_text") or (selected.get("content", "") if selected else "")
+    default_content = (
+        st.session_state.get("upload_text")
+        or st.session_state.get("evidence_input")
+        or (selected.get("content", "") if selected else "")
+    )
     content = st.text_area(
-        "Evidence",
+        "Paste suspicious message or link",
         value=default_content,
         height=316,
+        key="evidence_input",
     )
-    analyze = st.button("Run Triage", type="primary", width="stretch")
+    analyze = st.button("Check this message", type="primary", width="stretch")
 
 # Case assessment panel: shows either the active result or a neutral empty state.
 with right:
-    st.markdown('<div class="section-label">Case Assessment</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Result</div>', unsafe_allow_html=True)
     if result:
-        render_case(
-            result,
-            st.session_state.get("analysis_content", content),
-            st.session_state.get("analysis_input_type", input_type),
-            st.session_state.get("analysis_context", context),
-            runtime,
-        )
+        render_friendly_result(result)
     else:
         st.markdown(
             """
             <div class="empty-state">
                 <div>
-                    <div class="verdict">No active case selected</div>
-                    <div class="summary">Queue a sample or submit new evidence to create a threat intelligence case.</div>
+                    <div class="verdict">No message checked yet</div>
+                    <div class="summary">Paste a suspicious message or choose an example. The result will explain the risk and what to do next.</div>
                 </div>
             </div>
             """,
@@ -1038,9 +1108,9 @@ with right:
 
 if analyze:
     if not content.strip():
-        st.warning("Evidence is required before triage can run.")
+        st.warning("Paste a message or link before checking.")
     else:
-        with st.spinner("Running model-assisted threat triage..."):
+        with st.spinner("Checking the message..."):
             try:
                 # Store request metadata with the response so the case card
                 # remains stable after Streamlit reruns the page.
@@ -1074,87 +1144,95 @@ else:
     ]
 
     st.divider()
-    overview_tab, observables_tab, enrichment_tab, mitre_tab, response_tab, report_tab = st.tabs(
-        ["Intelligence", "Observables", "Enrichment", "ATT&CK", "Response", "Report"]
-    )
-
-    with overview_tab:
-        col_evidence, col_actions = st.columns([1, 1], gap="large")
-        with col_evidence:
-            st.markdown('<div class="section-label">Analytic Evidence</div>', unsafe_allow_html=True)
-            st.dataframe(pd.DataFrame({"Evidence": evidence}), width="stretch", hide_index=True)
-        with col_actions:
-            st.markdown('<div class="section-label">Response Priorities</div>', unsafe_allow_html=True)
-            st.dataframe(pd.DataFrame(action_rows(result["recommended_actions"])), width="stretch", hide_index=True)
-
-    with observables_tab:
-        st.markdown('<div class="section-label">Indicators Of Compromise</div>', unsafe_allow_html=True)
-        st.dataframe(
-            pd.DataFrame(rows or [{"Observable Type": "NONE", "Value": "No IOCs detected", "Disposition": "None", "Source": "Analyzer"}]),
-            width="stretch",
-            hide_index=True,
+    with st.expander("Advanced details for IT or security teams", expanded=False):
+        render_case(
+            result,
+            st.session_state.get("analysis_content", content),
+            st.session_state.get("analysis_input_type", input_type),
+            st.session_state.get("analysis_context", context),
+            runtime,
+        )
+        overview_tab, observables_tab, enrichment_tab, mitre_tab, response_tab, report_tab = st.tabs(
+            ["Summary", "Links found", "Reputation check", "Attack method", "For IT/security", "Full report"]
         )
 
-    with enrichment_tab:
-        st.markdown('<div class="section-label">Threat Feed Enrichment</div>', unsafe_allow_html=True)
-        enriched = enrichment_rows(result.get("enrichment") or [])
-        st.dataframe(
-            pd.DataFrame(enriched or [{"Observable Type": "NONE", "Value": "No enrichment findings", "Verdict": "NONE", "Confidence": "NONE", "Source": "Local", "Details": ""}]),
-            width="stretch",
-            hide_index=True,
-        )
+        with overview_tab:
+            col_evidence, col_actions = st.columns([1, 1], gap="large")
+            with col_evidence:
+                st.markdown('<div class="section-label">Why it was flagged</div>', unsafe_allow_html=True)
+                st.dataframe(pd.DataFrame({"Reason": evidence}), width="stretch", hide_index=True)
+            with col_actions:
+                st.markdown('<div class="section-label">Recommended next steps</div>', unsafe_allow_html=True)
+                st.dataframe(pd.DataFrame({"Action": result["recommended_actions"]}), width="stretch", hide_index=True)
 
-    with mitre_tab:
-        st.markdown('<div class="section-label">MITRE ATT&CK Mapping</div>', unsafe_allow_html=True)
-        st.dataframe(pd.DataFrame(mappings), width="stretch", hide_index=True)
-
-    with response_tab:
-        st.markdown('<div class="section-label">Containment And Follow-Up</div>', unsafe_allow_html=True)
-        st.dataframe(pd.DataFrame(action_rows(result["recommended_actions"])), width="stretch", hide_index=True)
-        st.markdown('<div class="section-label">Analyst Feedback</div>', unsafe_allow_html=True)
-        feedback_col_1, feedback_col_2 = st.columns([0.45, 0.55], gap="large")
-        with feedback_col_1:
-            feedback_verdict = st.radio("Review Result", ["correct", "incorrect", "needs_review"], horizontal=True)
-            feedback_rating = st.slider("Confidence Rating", min_value=1, max_value=5, value=4)
-        with feedback_col_2:
-            analyst_note = st.text_area("Analyst Note", height=96)
-            if st.button("Submit Feedback", width="stretch"):
-                try:
-                    saved = api_save_feedback(
-                        {
-                            "case_id": case_id(st.session_state.get("analysis_content", "")),
-                            "verdict": feedback_verdict,
-                            "rating": feedback_rating,
-                            "analyst_note": analyst_note,
-                            "analysis": result,
-                        }
-                    )
-                    st.success(f"Feedback saved: {saved['feedback_id']}")
-                except requests.RequestException as exc:
-                    st.error(f"Feedback failed: {exc}")
-
-    with report_tab:
-        st.markdown(result["report_markdown"])
-        export_col_1, export_col_2, export_col_3 = st.columns([0.25, 0.25, 0.5])
-        with export_col_1:
-            st.download_button(
-                "Download Markdown",
-                result["report_markdown"],
-                file_name="afrishield-incident-report.md",
-                mime="text/markdown",
+        with observables_tab:
+            st.markdown('<div class="section-label">Links and technical details found</div>', unsafe_allow_html=True)
+            st.dataframe(
+                pd.DataFrame(rows or [{"Observable Type": "NONE", "Value": "No links or technical indicators detected", "Disposition": "None", "Source": "Analyzer"}]),
                 width="stretch",
+                hide_index=True,
             )
-        with export_col_2:
-            try:
-                pdf_bytes = api_export_pdf(result["report_markdown"])
+
+        with enrichment_tab:
+            st.markdown('<div class="section-label">Reputation check</div>', unsafe_allow_html=True)
+            enriched = enrichment_rows(result.get("enrichment") or [])
+            st.dataframe(
+                pd.DataFrame(enriched or [{"Observable Type": "NONE", "Value": "No reputation findings", "Verdict": "NONE", "Confidence": "NONE", "Source": "Local", "Details": ""}]),
+                width="stretch",
+                hide_index=True,
+            )
+
+        with mitre_tab:
+            st.markdown('<div class="section-label">Attack method</div>', unsafe_allow_html=True)
+            st.dataframe(pd.DataFrame(mappings), width="stretch", hide_index=True)
+
+        with response_tab:
+            st.markdown('<div class="section-label">Response plan</div>', unsafe_allow_html=True)
+            st.dataframe(pd.DataFrame(action_rows(result["recommended_actions"])), width="stretch", hide_index=True)
+            st.markdown('<div class="section-label">Analyst feedback</div>', unsafe_allow_html=True)
+            feedback_col_1, feedback_col_2 = st.columns([0.45, 0.55], gap="large")
+            with feedback_col_1:
+                feedback_verdict = st.radio("Review result", ["correct", "incorrect", "needs_review"], horizontal=True)
+                feedback_rating = st.slider("Confidence rating", min_value=1, max_value=5, value=4)
+            with feedback_col_2:
+                analyst_note = st.text_area("Analyst note", height=96)
+                if st.button("Submit feedback", width="stretch"):
+                    try:
+                        saved = api_save_feedback(
+                            {
+                                "case_id": case_id(st.session_state.get("analysis_content", "")),
+                                "verdict": feedback_verdict,
+                                "rating": feedback_rating,
+                                "analyst_note": analyst_note,
+                                "analysis": result,
+                            }
+                        )
+                        st.success(f"Feedback saved: {saved['feedback_id']}")
+                    except requests.RequestException as exc:
+                        st.error(f"Feedback failed: {exc}")
+
+        with report_tab:
+            st.markdown(result["report_markdown"])
+            export_col_1, export_col_2, export_col_3 = st.columns([0.25, 0.25, 0.5])
+            with export_col_1:
                 st.download_button(
-                    "Download PDF",
-                    pdf_bytes,
-                    file_name="afrishield-incident-report.pdf",
-                    mime="application/pdf",
+                    "Download full report",
+                    result["report_markdown"],
+                    file_name="afrishield-incident-report.md",
+                    mime="text/markdown",
                     width="stretch",
                 )
-            except requests.RequestException as exc:
-                st.warning(f"PDF export unavailable: {exc}")
-        with export_col_3:
-            render_copy_report_button(result["report_markdown"])
+            with export_col_2:
+                try:
+                    pdf_bytes = api_export_pdf(result["report_markdown"])
+                    st.download_button(
+                        "Download PDF",
+                        pdf_bytes,
+                        file_name="afrishield-incident-report.pdf",
+                        mime="application/pdf",
+                        width="stretch",
+                    )
+                except requests.RequestException as exc:
+                    st.warning(f"PDF export unavailable: {exc}")
+            with export_col_3:
+                render_copy_report_button(result["report_markdown"])
