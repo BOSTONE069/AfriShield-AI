@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Fake M-Pesa Suspension",
+    "input_type": "sms",
+    "context": "Kenya",
+    "content": "Your M-Pesa account has been temporarily suspended due to unusual activity. Confirm your identity at http://mpesa-secure-helpdesk.net to restore services."
+  }
+]

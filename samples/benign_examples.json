@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Benign Department Message",
+    "input_type": "email",
+    "context": "Kenya",
+    "content": "Dear student, the department meeting will be held on Friday at 10:00 AM in Lab 3. Please come with your student ID."
+  }
+]

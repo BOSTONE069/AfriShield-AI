@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Fake University Portal",
+    "input_type": "email",
+    "context": "Kenya",
+    "content": "Dear student, your fee statement has been updated. Login to confirm your payment status at https://tuk-studentportal-support.com before midnight."
+  }
+]

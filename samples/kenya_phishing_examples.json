@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Fake SACCO Account Alert",
+    "input_type": "sms",
+    "context": "Kenya",
+    "content": "Security alert: your SACCO account will be blocked today. Click https://sacco-member-verify.co.ke to restore access."
+  },
+  {
+    "name": "NGO Grant Impersonation",
+    "input_type": "email",
+    "context": "Kenya",
+    "content": "Congratulations, your NGO has qualified for a donor grant. Confirm bank details urgently at https://donor-grants-africa.org/verify."
+  }
+]
