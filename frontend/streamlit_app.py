@@ -10,6 +10,7 @@ The page is organized like a lightweight SOC workspace:
 
 import hashlib
 import html
+import json
 import os
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +18,7 @@ from typing import Any
 import pandas as pd
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 # API_BASE can be overridden when the backend runs on a different host/port.
@@ -128,48 +130,74 @@ def inject_styles() -> None:
             overflow-wrap: anywhere;
         }
 
-        .topbar {
+        .console-header {
             background: #ffffff;
             border: 1px solid var(--line);
             border-radius: 8px;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
+            padding: 18px 20px;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-            margin-bottom: 14px;
+            margin-bottom: 10px;
+            overflow: visible;
         }
 
-        .topbar-title {
+        .console-title {
             color: #0f172a;
             font-size: 1.46rem;
             font-weight: 820;
+            line-height: 1.25;
+            margin: 0;
+            padding: 0;
+        }
+
+        .console-subtitle {
+            color: #475569;
+            font-size: 0.92rem;
+            font-weight: 620;
+            line-height: 1.45;
+            margin-top: 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .runtime-statusbar {
+            background: #f8fafc;
+            border: 1px solid #d7dee8;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 14px;
+            overflow: visible;
+        }
+
+        .runtime-chip-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .runtime-chip {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 12px;
+            min-height: 58px;
+            overflow: visible;
+        }
+
+        .runtime-chip-label {
+            color: #334155;
+            font-size: 0.72rem;
+            font-weight: 820;
+            text-transform: uppercase;
             line-height: 1.2;
         }
 
-        .topbar-subtitle {
-            color: var(--muted);
-            font-size: 0.9rem;
-            margin-top: 3px;
-        }
-
-        .chip-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .chip {
-            border: 1px solid #cbd5e1;
-            background: #f8fafc;
-            color: #334155;
-            border-radius: 999px;
-            padding: 6px 10px;
-            font-weight: 720;
-            font-size: 0.78rem;
-            white-space: nowrap;
+        .runtime-chip-value {
+            color: #0f172a;
+            font-size: 0.86rem;
+            font-weight: 760;
+            line-height: 1.28;
+            margin-top: 5px;
+            overflow-wrap: anywhere;
+            white-space: normal;
         }
 
         .shell-band {
@@ -392,10 +420,50 @@ def inject_styles() -> None:
             color: #0f766e;
         }
 
+        div[data-testid="stSelectbox"] label,
+        div[data-testid="stTextInput"] label,
+        div[data-testid="stTextArea"] label,
+        div[data-testid="stFileUploader"] label {
+            color: #1f2937;
+            font-weight: 760;
+        }
+
         div[data-testid="stTextArea"] textarea,
-        div[data-testid="stTextInput"] input,
-        div[data-baseweb="select"] {
+        div[data-testid="stTextInput"] input {
+            background: #ffffff;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
+            caret-color: #0f766e;
+        }
+
+        div[data-testid="stTextArea"] textarea::placeholder,
+        div[data-testid="stTextInput"] input::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
+
+        div[data-baseweb="select"] > div {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        div[data-baseweb="select"] span,
+        div[data-baseweb="select"] input,
+        div[data-baseweb="select"] svg {
+            color: #0f172a;
+            fill: #0f172a;
+        }
+
+        div[data-testid="stFileUploaderDropzone"] {
+            background: #ffffff;
+            border: 1px dashed #94a3b8;
+            border-radius: 8px;
+        }
+
+        div[data-testid="stFileUploaderDropzone"] * {
+            color: #334155;
         }
 
         .stTabs [data-baseweb="tab-list"] {
@@ -410,7 +478,6 @@ def inject_styles() -> None:
         }
 
         @media (max-width: 860px) {
-            .topbar,
             .case-header {
                 display: block;
             }
@@ -420,6 +487,7 @@ def inject_styles() -> None:
                 margin-top: 12px;
             }
 
+            .runtime-chip-grid,
             .band-grid,
             .signal-strip,
             .risk-grid {
@@ -475,6 +543,35 @@ def api_post_analyze(input_type: str, content: str, context: str) -> dict[str, A
     return response.json()
 
 
+def api_extract_document(filename: str, content: bytes) -> str:
+    """Send an uploaded document to the backend text-extraction endpoint."""
+    response = requests.post(
+        f"{API_BASE}/api/document/extract",
+        files={"file": (filename, content)},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()["content"]
+
+
+def api_export_pdf(report_markdown: str) -> bytes:
+    """Ask the backend to convert Markdown report text into PDF bytes."""
+    response = requests.post(
+        f"{API_BASE}/api/report/pdf",
+        json={"title": "AfriShield AI Incident Report", "report_markdown": report_markdown},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.content
+
+
+def api_save_feedback(payload: dict[str, Any]) -> dict[str, Any]:
+    """Submit analyst feedback for persistence in backend JSONL storage."""
+    response = requests.post(f"{API_BASE}/api/feedback", json=payload, timeout=15)
+    response.raise_for_status()
+    return response.json()
+
+
 def runtime_row(label: str, value: object) -> None:
     """Render one compact runtime key/value row in the sidebar."""
     st.markdown(
@@ -521,19 +618,36 @@ def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> No
 
 
 def render_topbar(runtime: dict[str, Any]) -> None:
-    """Render the page header and high-level model state chips."""
+    """Render the console title and a separate full runtime status bar."""
     model_state = "LLM ACTIVE" if runtime.get("llm_enabled") else "RULES MODE"
     st.markdown(
         f"""
-        <div class="topbar">
-            <div>
-                <div class="topbar-title">Threat Intelligence Console</div>
-                <div class="topbar-subtitle">Case triage, IOC extraction, ATT&CK mapping, and SOC reporting</div>
-            </div>
-            <div class="chip-row">
-                <span class="chip">{esc(model_state)}</span>
-                <span class="chip">{esc(runtime.get("model", "Qwen/Qwen3-0.6B"))}</span>
-                <span class="chip">{esc(runtime.get("cloud", "Local Workstation"))}</span>
+        <div class="console-header">
+            <div class="console-title">Threat Intelligence Console</div>
+            <div class="console-subtitle">Case triage, IOC extraction, ATT&CK mapping, and SOC reporting</div>
+        </div>
+        <div class="runtime-statusbar">
+            <div class="runtime-chip-grid">
+                <div class="runtime-chip">
+                    <div class="runtime-chip-label">Runtime</div>
+                    <div class="runtime-chip-value">{esc(model_state)}</div>
+                </div>
+                <div class="runtime-chip">
+                    <div class="runtime-chip-label">Provider</div>
+                    <div class="runtime-chip-value">{esc(runtime.get("llm_provider", "local_transformers"))}</div>
+                </div>
+                <div class="runtime-chip">
+                    <div class="runtime-chip-label">Model</div>
+                    <div class="runtime-chip-value">{esc(runtime.get("model", "Qwen/Qwen3-0.6B"))}</div>
+                </div>
+                <div class="runtime-chip">
+                    <div class="runtime-chip-label">Backend</div>
+                    <div class="runtime-chip-value">{esc(runtime.get("backend", "Transformers local"))}</div>
+                </div>
+                <div class="runtime-chip">
+                    <div class="runtime-chip-label">Compute</div>
+                    <div class="runtime-chip-value">{esc(runtime.get("gpu", "Local CPU"))}</div>
+                </div>
             </div>
         </div>
         """,
@@ -597,6 +711,21 @@ def ioc_rows(iocs: dict[str, list[str]]) -> list[dict[str, str]]:
     return rows
 
 
+def enrichment_rows(enrichment: list[dict[str, Any]]) -> list[dict[str, str]]:
+    """Format enrichment findings for the dashboard table."""
+    return [
+        {
+            "Observable Type": item.get("observable_type", "observable").upper(),
+            "Value": item.get("value", ""),
+            "Verdict": item.get("verdict", "unknown").upper(),
+            "Confidence": item.get("confidence", "unknown").upper(),
+            "Source": item.get("source", "enrichment"),
+            "Details": item.get("details", ""),
+        }
+        for item in enrichment
+    ]
+
+
 def action_rows(actions: list[str]) -> list[dict[str, str]]:
     """Format recommended actions as a response-priority table."""
     rows = []
@@ -623,6 +752,39 @@ def severity_badge(severity: str) -> str:
     return (
         f'<span class="severity-badge" style="--severity-color:{color};'
         f'--severity-bg:{color}18;">{esc(severity)}</span>'
+    )
+
+
+def render_copy_report_button(report_markdown: str) -> None:
+    """Render a small browser-side copy button for report text."""
+    report_json = json.dumps(report_markdown)
+    components.html(
+        f"""
+        <button id="copy-report" style="
+            border:1px solid #0f766e;
+            border-radius:8px;
+            background:#ffffff;
+            color:#0f766e;
+            padding:9px 12px;
+            font-weight:700;
+            cursor:pointer;
+        ">Copy report</button>
+        <span id="copy-status" style="margin-left:10px;color:#64748b;font-size:13px;"></span>
+        <script>
+        const report = {report_json};
+        const button = document.getElementById("copy-report");
+        const status = document.getElementById("copy-status");
+        button.onclick = async () => {{
+            try {{
+                await navigator.clipboard.writeText(report);
+                status.textContent = "Copied";
+            }} catch (err) {{
+                status.textContent = "Copy failed";
+            }}
+        }};
+        </script>
+        """,
+        height=48,
     )
 
 
@@ -722,9 +884,20 @@ with left:
         index=INPUT_TYPES.index(selected["input_type"]) if selected else 0,
     )
     context = st.text_input("Context", value=selected.get("context", "Kenya") if selected else "Kenya")
+    uploaded_file = st.file_uploader("Upload Evidence Document", type=["txt", "md", "eml", "log", "pdf"])
+    if uploaded_file is not None and st.button("Extract Document Text", width="stretch"):
+        with st.spinner("Extracting document text..."):
+            try:
+                st.session_state.upload_text = api_extract_document(uploaded_file.name, uploaded_file.getvalue())
+                st.session_state.upload_error = ""
+            except requests.RequestException as exc:
+                st.session_state.upload_error = str(exc)
+    if st.session_state.get("upload_error"):
+        st.warning(f"Document extraction failed: {st.session_state.upload_error}")
+    default_content = st.session_state.get("upload_text") or (selected.get("content", "") if selected else "")
     content = st.text_area(
         "Evidence",
-        value=selected.get("content", "") if selected else "",
+        value=default_content,
         height=316,
     )
     analyze = st.button("Run Triage", type="primary", width="stretch")
@@ -791,8 +964,8 @@ else:
     ]
 
     st.divider()
-    overview_tab, observables_tab, mitre_tab, response_tab, report_tab = st.tabs(
-        ["Intelligence", "Observables", "ATT&CK", "Response", "Report"]
+    overview_tab, observables_tab, enrichment_tab, mitre_tab, response_tab, report_tab = st.tabs(
+        ["Intelligence", "Observables", "Enrichment", "ATT&CK", "Response", "Report"]
     )
 
     with overview_tab:
@@ -812,6 +985,15 @@ else:
             hide_index=True,
         )
 
+    with enrichment_tab:
+        st.markdown('<div class="section-label">Threat Feed Enrichment</div>', unsafe_allow_html=True)
+        enriched = enrichment_rows(result.get("enrichment") or [])
+        st.dataframe(
+            pd.DataFrame(enriched or [{"Observable Type": "NONE", "Value": "No enrichment findings", "Verdict": "NONE", "Confidence": "NONE", "Source": "Local", "Details": ""}]),
+            width="stretch",
+            hide_index=True,
+        )
+
     with mitre_tab:
         st.markdown('<div class="section-label">MITRE ATT&CK Mapping</div>', unsafe_allow_html=True)
         st.dataframe(pd.DataFrame(mappings), width="stretch", hide_index=True)
@@ -819,12 +1001,50 @@ else:
     with response_tab:
         st.markdown('<div class="section-label">Containment And Follow-Up</div>', unsafe_allow_html=True)
         st.dataframe(pd.DataFrame(action_rows(result["recommended_actions"])), width="stretch", hide_index=True)
+        st.markdown('<div class="section-label">Analyst Feedback</div>', unsafe_allow_html=True)
+        feedback_col_1, feedback_col_2 = st.columns([0.45, 0.55], gap="large")
+        with feedback_col_1:
+            feedback_verdict = st.radio("Review Result", ["correct", "incorrect", "needs_review"], horizontal=True)
+            feedback_rating = st.slider("Confidence Rating", min_value=1, max_value=5, value=4)
+        with feedback_col_2:
+            analyst_note = st.text_area("Analyst Note", height=96)
+            if st.button("Submit Feedback", width="stretch"):
+                try:
+                    saved = api_save_feedback(
+                        {
+                            "case_id": case_id(st.session_state.get("analysis_content", "")),
+                            "verdict": feedback_verdict,
+                            "rating": feedback_rating,
+                            "analyst_note": analyst_note,
+                            "analysis": result,
+                        }
+                    )
+                    st.success(f"Feedback saved: {saved['feedback_id']}")
+                except requests.RequestException as exc:
+                    st.error(f"Feedback failed: {exc}")
 
     with report_tab:
         st.markdown(result["report_markdown"])
-        st.download_button(
-            "Download Report",
-            result["report_markdown"],
-            file_name="afrishield-incident-report.md",
-            mime="text/markdown",
-        )
+        export_col_1, export_col_2, export_col_3 = st.columns([0.25, 0.25, 0.5])
+        with export_col_1:
+            st.download_button(
+                "Download Markdown",
+                result["report_markdown"],
+                file_name="afrishield-incident-report.md",
+                mime="text/markdown",
+                width="stretch",
+            )
+        with export_col_2:
+            try:
+                pdf_bytes = api_export_pdf(result["report_markdown"])
+                st.download_button(
+                    "Download PDF",
+                    pdf_bytes,
+                    file_name="afrishield-incident-report.pdf",
+                    mime="application/pdf",
+                    width="stretch",
+                )
+            except requests.RequestException as exc:
+                st.warning(f"PDF export unavailable: {exc}")
+        with export_col_3:
+            render_copy_report_button(result["report_markdown"])
