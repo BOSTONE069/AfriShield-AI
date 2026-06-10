@@ -1,4 +1,4 @@
-"""Streamlit dashboard for the African Cyber Defense threat intelligence console.
+"""Streamlit dashboard for the AfriShield Cyber Defence threat intelligence console.
 
 The page is organized like a lightweight SOC workspace:
 - sidebar: runtime and demo queue
@@ -12,7 +12,9 @@ import hashlib
 import html
 import json
 import os
+import base64
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -23,6 +25,7 @@ import streamlit.components.v1 as components
 
 # API_BASE can be overridden when the backend runs on a different host/port.
 API_BASE = os.getenv("AFRISHIELD_API_BASE", "http://localhost:8000")
+LOGO_PATH = Path(__file__).resolve().parent / "assets" / "afrishield-cyber-defence-logo.png"
 INPUT_TYPES = ["email", "url", "sms", "social_message", "text"]
 SEVERITY_COLORS = {
     "LOW": "#10b981",
@@ -32,12 +35,18 @@ SEVERITY_COLORS = {
 }
 
 
-st.set_page_config(page_title="African Cyber Defense", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AfriShield Cyber Defence", layout="wide", initial_sidebar_state="expanded")
 
 
 def esc(value: object) -> str:
     """Escape dynamic values before embedding them in custom HTML blocks."""
     return html.escape(str(value))
+
+
+@st.cache_data
+def _logo_b64() -> str:
+    """Read the logo once and return base64 for custom HTML rendering."""
+    return base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
 
 
 def inject_styles(app_theme: str) -> None:
@@ -68,6 +77,8 @@ def inject_styles(app_theme: str) -> None:
             max-width: 1480px;
             padding-top: 20px;
             padding-bottom: 46px;
+            padding-left: 1.4rem;
+            padding-right: 1.4rem;
         }
 
         [data-testid="stSidebar"] {
@@ -85,9 +96,19 @@ def inject_styles(app_theme: str) -> None:
         }
 
         .sidebar-brand {
-            padding: 12px 4px 18px 4px;
+            padding: 8px 4px 18px 4px;
             border-bottom: 1px solid #22314a;
             margin-bottom: 18px;
+        }
+
+        .sidebar-logo {
+            width: 180px;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 14px auto;
+            border-radius: 8px;
         }
 
         .brand-title {
@@ -138,6 +159,17 @@ def inject_styles(app_theme: str) -> None:
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
             margin-bottom: 10px;
             overflow: visible;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .console-logo {
+            width: 74px;
+            height: 74px;
+            object-fit: contain;
+            border-radius: 8px;
+            flex: 0 0 auto;
         }
 
         .console-title {
@@ -479,28 +511,136 @@ def inject_styles(app_theme: str) -> None:
         .stTabs [data-baseweb="tab-list"] {
             gap: 3px;
             border-bottom: 1px solid #cfd8e3;
+            overflow-x: auto;
+            flex-wrap: nowrap;
         }
 
         .stTabs [data-baseweb="tab"] {
             border-radius: 8px 8px 0 0;
             padding: 10px 14px;
             font-weight: 760;
+            white-space: nowrap;
+            min-width: max-content;
         }
 
-        @media (max-width: 860px) {
-            .case-header {
-                display: block;
+        div[data-testid="stDataFrame"] {
+            overflow-x: auto;
+        }
+
+        @media (max-width: 1100px) {
+            .band-grid,
+            .signal-strip {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 900px) {
+            .block-container {
+                padding-left: 0.9rem;
+                padding-right: 0.9rem;
+                padding-top: 14px;
             }
 
-            .chip-row {
-                justify-content: flex-start;
-                margin-top: 12px;
+            /* Streamlit renders st.columns as horizontal flex blocks. On
+            tablet/mobile, force them to stack so forms and result cards do not
+            become cramped or overflow. */
+            div[data-testid="stHorizontalBlock"] {
+                flex-wrap: wrap;
+                gap: 0.75rem !important;
+            }
+
+            div[data-testid="stHorizontalBlock"] > div {
+                flex: 1 1 100% !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .console-header {
+                display: flex;
+                padding: 15px 16px;
+                gap: 12px;
+            }
+
+            .console-logo {
+                width: 58px;
+                height: 58px;
+            }
+
+            .console-title {
+                font-size: 1.24rem;
+            }
+
+            .console-subtitle {
+                font-size: 0.86rem;
+            }
+
+            .shell-band {
+                padding: 12px;
+            }
+
+            .case-header {
+                display: block;
             }
 
             .band-grid,
             .signal-strip,
             .risk-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .score-ring {
+                width: 104px;
+                height: 104px;
+            }
+
+            .score-ring::after {
+                width: 72px;
+                height: 72px;
+            }
+
+            .score-text {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .block-container {
+                padding-left: 0.55rem;
+                padding-right: 0.55rem;
+            }
+
+            .console-header,
+            .friendly-result,
+            .workspace-panel,
+            .empty-state {
+                padding: 12px;
+            }
+
+            .console-header {
+                align-items: flex-start;
+            }
+
+            .console-logo {
+                width: 48px;
+                height: 48px;
+            }
+
+            .console-title {
+                font-size: 1.08rem;
+            }
+
+            .friendly-title,
+            .verdict {
+                font-size: 1.06rem;
+            }
+
+            .band-value,
+            .signal-value {
+                font-size: 0.98rem;
+            }
+
+            div[data-testid="stTextArea"] textarea {
+                min-height: 220px;
             }
         }
         </style>
@@ -677,7 +817,7 @@ def api_export_pdf(report_markdown: str) -> bytes:
     """Ask the backend to convert Markdown report text into PDF bytes."""
     response = requests.post(
         f"{API_BASE}/api/report/pdf",
-        json={"title": "African Cyber Defense Incident Report", "report_markdown": report_markdown},
+        json={"title": "AfriShield Cyber Defence Incident Report", "report_markdown": report_markdown},
         timeout=30,
     )
     response.raise_for_status()
@@ -707,10 +847,12 @@ def runtime_row(label: str, value: object) -> None:
 def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> None:
     """Render the left-side operations rail with model status and sample queue."""
     with st.sidebar:
+        if LOGO_PATH.exists():
+            st.image(str(LOGO_PATH), width=190)
         st.markdown(
             """
             <div class="sidebar-brand">
-                <div class="brand-title">African Cyber Defense</div>
+                <div class="brand-title">AfriShield Cyber Defence</div>
                 <div class="brand-subtitle">Threat Intelligence Operations</div>
             </div>
             """,
@@ -738,11 +880,17 @@ def render_sidebar(runtime: dict[str, Any], samples: list[dict[str, Any]]) -> No
 
 def render_topbar(runtime: dict[str, Any]) -> None:
     """Render a simple common-user header."""
+    logo_html = ""
+    if LOGO_PATH.exists():
+        logo_html = f'<img class="console-logo" src="data:image/png;base64,{_logo_b64()}" alt="AfriShield Cyber Defence logo" />'
     st.markdown(
-        """
+        f"""
         <div class="console-header">
-            <div class="console-title">African Cyber Defense</div>
-            <div class="console-subtitle">Paste a suspicious email, SMS, WhatsApp message, or link. We will explain the risk in plain language and provide a report you can share with IT.</div>
+            {logo_html}
+            <div>
+                <div class="console-title">AfriShield Cyber Defence</div>
+                <div class="console-subtitle">Paste a suspicious email, SMS, WhatsApp message, or link. We will explain the risk in plain language and provide a report you can share with IT.</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1036,7 +1184,7 @@ result = st.session_state.get("analysis_result")
 render_band(result, runtime)
 
 sample_names = ["Paste my own message"] + [sample["name"] for sample in samples]
-left, right = st.columns([0.82, 1.18], gap="large")
+left, right = st.columns([1, 1], gap="large")
 
 # Evidence intake panel: choose a sample or paste a new suspicious message.
 with left:
