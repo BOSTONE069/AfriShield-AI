@@ -1,24 +1,35 @@
-# AfriShield AI
+# AfriShield Cyber Defence
 
-AMD MI300X-powered autonomous threat intelligence agent for African cyber defense.
+AfriShield Cyber Defence is a threat intelligence assistant for African institutions. It helps common users and analysts check suspicious emails, URLs, SMS messages, social messages, and uploaded evidence documents, then turns the evidence into clear risk guidance, extracted indicators, MITRE ATT&CK mapping, and exportable incident reports.
 
-AfriShield AI analyzes suspicious emails, URLs, SMS messages, and social messages. It extracts indicators of compromise, classifies likely threats, assigns a risk score, maps activity to MITRE ATT&CK, and produces a SOC-ready Markdown report.
+The application currently runs locally with a real open-source model, `Qwen/Qwen3-0.6B`, through Transformers and PyTorch CUDA when an NVIDIA GPU is available. It can also be pointed at an OpenAI-compatible vLLM endpoint on AMD Developer Cloud for ROCm/MI300X hackathon deployment.
 
-## Features
+## Current Features
 
-- FastAPI backend with `/health`, `/api/analyze`, `/api/runtime`, and `/api/samples`
-- Deterministic IOC extraction for URLs, domains, emails, IPs, and hashes
-- Localized classifier for KRA, M-Pesa, SACCO, university, donor, and banking scam patterns
-- Risk scoring and severity interpretation
-- MITRE ATT&CK mapping
-- Streamlit analyst dashboard
-- Runtime panel for model, backend, latency, and tokens/sec
-- Real local model support through Transformers using `Qwen/Qwen3-0.6B`
-- Optional OpenAI-compatible vLLM endpoint for AMD Developer Cloud inference
+- Responsive Streamlit dashboard branded as **AfriShield Cyber Defence** with the project logo.
+- Common-user workflow with plain-language risk explanation, next steps, and quick example cases.
+- Advanced analyst details for IOCs, OSINT-style enrichment, MITRE ATT&CK mapping, runtime metrics, and full reports.
+- FastAPI backend with `/health`, `/api/analyze`, `/api/runtime`, `/api/samples`, `/api/feedback`, `/api/report/pdf`, and `/api/document/extract`.
+- Multi-agent-style analyzer pipeline covering preprocessing, IOC extraction, classification, enrichment, risk scoring, MITRE mapping, and reporting.
+- Deterministic baseline analysis for reliable demos and tests.
+- Optional LLM classification enrichment using a local Transformers model or an OpenAI-compatible inference endpoint.
+- Markdown report download, PDF report export, and browser copy-to-clipboard support.
+- Analyst feedback capture with verdict, rating, and comments stored as JSONL.
+- TXT, MD, EML, LOG, and PDF evidence upload text extraction.
+- Threat feed enrichment from the local sample feed plus heuristic domain/IP/URL checks.
+- MITRE ATT&CK techniques with formal IDs such as `T1566`.
+- Test coverage for API routes, IOC extraction, enrichment, MITRE mapping, risk scoring, sample loading, analyzer behavior, and LLM fallback.
 
-## Architecture
+## Project Structure
 
-See [docs/architecture.md](docs/architecture.md).
+```text
+backend/app/             FastAPI service and analysis pipeline
+backend/tests/           Pytest test suite
+frontend/streamlit_app.py Streamlit dashboard
+frontend/assets/         AfriShield logo and UI assets
+samples/                 Demo cases and local threat feed
+docs/                    Architecture, pitch, demo, judging, and threat-model notes
+```
 
 ## Setup
 
@@ -29,44 +40,57 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install backend dependencies:
+Install backend and frontend dependencies:
 
 ```bash
 pip install -r backend/requirements.txt
+pip install -r frontend/requirements.txt
 ```
 
-Run the backend from the repository root:
+For local GPU inference, install a PyTorch build that matches your driver/CUDA stack. The tested local setup uses PyTorch `2.6.0+cu124` with CUDA `12.4`.
+
+Check CUDA from Python:
+
+```bash
+python3 -c "import torch; print(torch.__version__); print(torch.version.cuda); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no cuda')"
+```
+
+## Start The App
+
+Start the backend from the repository root:
 
 ```bash
 uvicorn backend.app.main:app --reload
 ```
 
-Install frontend dependencies in the same environment:
-
-```bash
-pip install -r frontend/requirements.txt
-```
-
-Run the dashboard:
+Start the dashboard in another terminal:
 
 ```bash
 streamlit run frontend/streamlit_app.py
 ```
 
+The dashboard expects the backend at `http://localhost:8000` unless `AFRISHIELD_API_BASE` is set.
+
 ## Model Configuration
 
-This workspace is configured to use a real local model by default:
+The local development configuration uses a real model:
 
 ```env
 LLM_PROVIDER=local_transformers
 USE_LLM=true
 LLM_MODEL=Qwen/Qwen3-0.6B
 LOCAL_MODEL_PATH=/home/th3c0nf3d3r4t3/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca
+LOCAL_MAX_NEW_TOKENS=220
+USE_LLM_REPORTS=false
+RUNTIME_GPU=auto
+RUNTIME_CLOUD=Local Workstation
+RUNTIME_BACKEND=Transformers local
+RUNTIME_FRAMEWORK=PyTorch CUDA
 ```
 
-The local model runs through Transformers and PyTorch. If CUDA is available, the backend automatically moves the local model to your NVIDIA GPU; otherwise it falls back to CPU.
+`USE_LLM_REPORTS=false` is recommended for local demos on smaller GPUs because it avoids a second generation call for the report. Classification can still use the LLM while the report is generated from the deterministic template.
 
-For AMD Developer Cloud vLLM, update [backend/.env](backend/.env):
+For AMD Developer Cloud or another ROCm/vLLM deployment, update `backend/.env`:
 
 ```env
 LLM_PROVIDER=openai_compatible
@@ -80,11 +104,7 @@ RUNTIME_BACKEND=vLLM
 RUNTIME_FRAMEWORK=ROCm + PyTorch
 ```
 
-Set `USE_LLM=false` if you want deterministic rules-only analysis.
-
-For faster local demos, keep `USE_LLM_REPORTS=false`. The backend will still
-use the model for classification enrichment, but the report will be generated
-from a deterministic template instead of making a second model call.
+Set `USE_LLM=false` for deterministic rules-only operation.
 
 ## API Example
 
@@ -100,6 +120,13 @@ curl -X POST http://localhost:8000/api/analyze \
 python3 -m pytest backend/tests
 ```
 
-## Demo Samples
+The current test suite covers analyzer basics, API endpoints, document extraction, PDF export, analyst feedback, IOC extraction, local threat feed enrichment, MITRE mappings, sample cases, risk scoring, and LLM fallback behavior.
 
-Sample scenarios live in [samples](samples), including fake KRA refund, fake M-Pesa suspension, fake university portal, NGO grant impersonation, SACCO account alert, and benign department message examples.
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Demo Script](docs/demo_script.md)
+- [Pitch](docs/pitch.md)
+- [Judging Notes](docs/judging_notes.md)
+- [Threat Model](docs/threat_model.md)
+- [Project Approach](afrishield_ai_project_approach.md)

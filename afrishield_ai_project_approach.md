@@ -1,24 +1,87 @@
-# AfriShield AI
+# AfriShield Cyber Defence
 
-## AMD MI300X-Powered Autonomous Threat Intelligence Agent for African Cyber Defense
+## AMD MI300X-Powered Autonomous Threat Intelligence Agent for African Cyber Defence
 
 ---
 
+## Current Implementation Status - June 2026
+
+The project has moved beyond the original MVP plan and is now implemented as **AfriShield Cyber Defence**, a branded Streamlit and FastAPI threat intelligence platform.
+
+### Implemented Application Updates
+
+| Area | Current Status |
+|---|---|
+| Branding | Dashboard renamed to AfriShield Cyber Defence with a generated logo in `frontend/assets/afrishield-cyber-defence-logo.png`. |
+| Dashboard UX | Responsive Streamlit dashboard with common-user wording, quick examples, plain-language risk explanation, next steps, and advanced analyst details. |
+| Backend API | FastAPI exposes `/health`, `/api/analyze`, `/api/runtime`, `/api/samples`, `/api/feedback`, `/api/report/pdf`, and `/api/document/extract`. |
+| IOC extraction | URLs, domains, email addresses, IP addresses, and hashes are extracted from pasted or uploaded evidence. |
+| Threat classification | Deterministic localized classifier runs first; optional LLM enrichment is available. |
+| Real model | Local development uses `Qwen/Qwen3-0.6B` through Transformers. CUDA is used automatically when PyTorch detects the NVIDIA GPU. |
+| AMD deployment path | The app can be pointed to an OpenAI-compatible vLLM endpoint on AMD Developer Cloud by changing `backend/.env`. |
+| Runtime panel | Dashboard shows provider, model, backend, framework, compute device, latency, and tokens/sec. |
+| Threat feed enrichment | Extracted indicators are checked against `samples/threat_feed.json` and local reputation heuristics. |
+| MITRE mapping | Mappings now include formal ATT&CK technique IDs such as `T1566`. |
+| Reports | Markdown reports are generated, downloadable, copyable, and exportable to PDF. |
+| Analyst feedback | Correct/incorrect/needs-review feedback, confidence rating, and comments are captured through the dashboard and saved as JSONL. |
+| Document upload | TXT, MD, EML, LOG, and PDF evidence upload is supported through the backend extraction endpoint. |
+| Multi-agent mode | Implemented as an orchestrated multi-agent-style pipeline with preprocessing, IOC, classification, enrichment, risk, MITRE, and report agents. |
+| Tests | Tests now cover analyzer behavior, IOC extraction, risk scoring, MITRE mapping, enrichment, API endpoints, samples, PDF export, document extraction, feedback, and LLM fallback. |
+
+### Current Local Runtime
+
+```env
+LLM_PROVIDER=local_transformers
+USE_LLM=true
+LLM_MODEL=Qwen/Qwen3-0.6B
+LOCAL_MAX_NEW_TOKENS=220
+USE_LLM_REPORTS=false
+RUNTIME_GPU=auto
+RUNTIME_CLOUD=Local Workstation
+RUNTIME_BACKEND=Transformers local
+RUNTIME_FRAMEWORK=PyTorch CUDA
+```
+
+`USE_LLM_REPORTS=false` keeps local analysis responsive on smaller GPUs by using the model for classification enrichment while generating the report from deterministic template code.
+
+### AMD Developer Cloud Runtime
+
+For hackathon judging on AMD infrastructure, update `backend/.env`:
+
+```env
+LLM_PROVIDER=openai_compatible
+USE_LLM=true
+LLM_API_BASE=http://your-amd-vllm-endpoint:8000/v1
+LLM_API_KEY=not-required-or-your-key
+LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
+RUNTIME_GPU=AMD Instinct MI300X
+RUNTIME_CLOUD=AMD Developer Cloud
+RUNTIME_BACKEND=vLLM
+RUNTIME_FRAMEWORK=ROCm + PyTorch
+```
+
+### Remaining Submission Tasks
+
+- Run and screen-record the final demo on AMD Developer Cloud if hackathon rules require AMD runtime proof.
+- Capture screenshots of the runtime panel showing AMD MI300X, vLLM, and ROCm + PyTorch.
+- Review feedback storage before production use because the MVP stores analyst feedback locally in `data/feedback.jsonl`.
+- Add authentication, history storage, and external live OSINT integrations only if the project moves beyond MVP/hackathon scope.
+
 ## 1. Project Summary
 
-**AfriShield AI** is an AI-powered cyber threat intelligence assistant designed to help African institutions quickly analyze suspicious emails, URLs, messages, and security-related text. The system classifies potential threats, extracts indicators of compromise, assigns a risk score, maps activity to MITRE ATT&CK techniques, and generates a SOC-ready incident report.
+**AfriShield Cyber Defence** is an AI-powered cyber threat intelligence assistant designed to help African institutions quickly analyze suspicious emails, URLs, messages, and security-related text. The system classifies potential threats, extracts indicators of compromise, assigns a risk score, maps activity to MITRE ATT&CK techniques, and generates a SOC-ready incident report.
 
 The project is designed for the **AMD Developer Hackathon: ACT II**, where the solution must run on AMD infrastructure using AMD cloud-accessible GPUs, ROCm-compatible frameworks, and open-source AI tooling.
 
 ### Short Description
 
-AfriShield AI turns suspicious links, emails, and messages into explainable cyber threat intelligence reports in seconds.
+AfriShield Cyber Defence turns suspicious links, emails, and messages into explainable cyber threat intelligence reports in seconds.
 
 ### Long Description
 
 African institutions such as universities, banks, SMEs, SACCOs, public agencies, and NGOs face increasing phishing, scam, impersonation, credential theft, and misinformation threats. Many of these organizations do not have mature Security Operations Centers or expensive commercial threat intelligence tools.
 
-AfriShield AI acts as a lightweight AI SOC analyst. It helps users analyze suspicious digital content, identify risks, extract technical indicators, understand the threat context, and receive recommended response actions.
+AfriShield Cyber Defence acts as a lightweight AI SOC analyst. It helps users analyze suspicious digital content, identify risks, extract technical indicators, understand the threat context, and receive recommended response actions.
 
 ---
 
@@ -45,7 +108,7 @@ Many organizations lack:
 - Affordable AI-assisted security tooling
 - Automated incident reporting
 
-AfriShield AI addresses this by providing a localized, explainable, and GPU-accelerated AI cyber defense assistant.
+AfriShield Cyber Defence addresses this by providing a localized, explainable, and GPU-accelerated AI cyber defense assistant.
 
 ---
 
@@ -80,7 +143,7 @@ The main goal is to build a working AI agent that can:
 
 ### Recommended Pitch
 
-> AfriShield AI is an AMD MI300X-powered autonomous threat intelligence agent for African cyber defense. It analyzes suspicious emails, URLs, and messages, extracts indicators of compromise, classifies cyber risk, maps threats to MITRE ATT&CK, and generates SOC-ready incident reports. The system uses open-source AI models accelerated on AMD Developer Cloud through ROCm-compatible inference tooling.
+> AfriShield Cyber Defence is an AMD MI300X-powered autonomous threat intelligence agent for African cyber defense. It analyzes suspicious emails, URLs, and messages, extracts indicators of compromise, classifies cyber risk, maps threats to MITRE ATT&CK, and generates SOC-ready incident reports. The system uses open-source AI models accelerated on AMD Developer Cloud through ROCm-compatible inference tooling.
 
 ### Tagline
 
@@ -90,7 +153,7 @@ The main goal is to build a working AI agent that can:
 
 The hackathon asks participants to build an AI agent or high-performance AI application on AMD Developer Cloud using ROCm-compatible frameworks and AMD GPUs.
 
-AfriShield AI fits because it:
+AfriShield Cyber Defence fits because it:
 
 - Solves a real-world cybersecurity problem.
 - Uses open-source AI models.
@@ -170,14 +233,14 @@ The system should return:
 
 ### Nice-to-Have Features
 
-| Feature | Description |
-|---|---|
-| PDF Export | Export threat report as PDF |
-| History Dashboard | Store previous analyses |
-| Analyst Feedback | Allow analyst to mark output as correct/incorrect |
-| Document Upload | Analyze uploaded PDFs or TXT files |
-| Multi-Agent Mode | Separate agents for URL, email, IOC, MITRE, and report generation |
-| Threat Feed Enrichment | Add external open-source threat intelligence feeds |
+| Feature | Description | Current Status |
+|---|---|---|
+| PDF Export | Export threat report as PDF | Implemented through `/api/report/pdf` |
+| History Dashboard | Store previous analyses | Not implemented; feedback is stored locally only |
+| Analyst Feedback | Allow analyst to mark output as correct/incorrect | Implemented through `/api/feedback` |
+| Document Upload | Analyze uploaded PDFs or TXT files | Implemented for TXT, MD, EML, LOG, and PDF text extraction |
+| Multi-Agent Mode | Separate agents for URL, email, IOC, MITRE, and report generation | Implemented as an orchestrated multi-agent-style pipeline |
+| Threat Feed Enrichment | Add external open-source threat intelligence feeds | Implemented with local threat feed and heuristic enrichment; live external OSINT APIs remain future work |
 
 ---
 
@@ -211,7 +274,7 @@ The goal is a working, polished, demonstrable AI threat intelligence agent.
 | Model | Qwen2.5, Llama, Mistral, or another open-source instruct model |
 | Database | SQLite for MVP, PostgreSQL for production |
 | Vector Store | ChromaDB or FAISS if RAG is added |
-| Reports | Markdown first, PDF later |
+| Reports | Markdown, copy-to-clipboard, and PDF export |
 | Deployment | AMD cloud VM + GitHub repo |
 
 ### Recommended MVP Choice
@@ -337,12 +400,21 @@ afrishield-ai/
 │   │   ├── ioc_extractor.py
 │   │   ├── risk_scoring.py
 │   │   ├── mitre_mapper.py
+│   │   ├── agents.py
+│   │   ├── document_parser.py
+│   │   ├── enrichment.py
+│   │   ├── feedback.py
 │   │   ├── report_generator.py
+│   │   ├── pdf_export.py
 │   │   ├── llm_client.py
 │   │   └── runtime_metrics.py
 │   │
 │   ├── tests/
+│   │   ├── test_api.py
+│   │   ├── test_enrichment.py
 │   │   ├── test_ioc_extractor.py
+│   │   ├── test_llm_fallback.py
+│   │   ├── test_mitre_mapper.py
 │   │   ├── test_risk_scoring.py
 │   │   └── test_analyzer.py
 │   │
@@ -354,6 +426,7 @@ afrishield-ai/
 │   ├── streamlit_app.py
 │   ├── components/
 │   └── assets/
+│       └── afrishield-cyber-defence-logo.png
 │
 ├── samples/
 │   ├── kenya_phishing_examples.json
@@ -479,6 +552,46 @@ Response:
   }
 ]
 ```
+
+### 13.5 Analyst Feedback
+
+```http
+POST /api/feedback
+```
+
+Captures analyst review after a case has been analyzed.
+
+```json
+{
+  "case_id": "case-123",
+  "verdict": "correct",
+  "rating": 4,
+  "comments": "Good classification and useful next steps."
+}
+```
+
+### 13.6 PDF Report Export
+
+```http
+POST /api/report/pdf
+```
+
+Converts a Markdown incident report into an `application/pdf` response.
+
+```json
+{
+  "title": "AfriShield Cyber Defence Incident Report",
+  "report_markdown": "# Incident Report\n\n..."
+}
+```
+
+### 13.7 Document Text Extraction
+
+```http
+POST /api/document/extract
+```
+
+Accepts uploaded TXT, MD, EML, LOG, or PDF files and returns extracted text for the analyzer workflow.
 
 ---
 
@@ -607,7 +720,7 @@ Use structured prompting to force consistent JSON output.
 ### Threat Classification Prompt
 
 ```text
-You are AfriShield AI, a cybersecurity threat intelligence assistant focused on African cyber defense.
+You are AfriShield Cyber Defence, a cybersecurity threat intelligence assistant focused on African cyber defense.
 
 Analyze the following input and classify the cyber threat.
 
@@ -634,7 +747,7 @@ African/Kenyan cyber threat environment, including mobile money scams, KRA imper
 ### Report Generation Prompt
 
 ```text
-You are AfriShield AI, a SOC reporting assistant.
+You are AfriShield Cyber Defence, a SOC reporting assistant.
 
 Generate a clear incident report in Markdown.
 
@@ -742,7 +855,7 @@ The dashboard should be simple and judge-friendly.
 ### Main UI Sections
 
 1. **Project Header**
-   - AfriShield AI
+   - AfriShield Cyber Defence
    - AMD MI300X-Powered Threat Intelligence Agent
 
 2. **Threat Input Panel**
@@ -978,7 +1091,7 @@ streamlit run streamlit_app.py
 Create a `.env` file:
 
 ```env
-APP_NAME=AfriShield AI
+APP_NAME=AfriShield Cyber Defence
 LLM_API_BASE=http://your-amd-vllm-endpoint:8000/v1
 LLM_API_KEY=not-required-or-your-key
 LLM_MODEL=qwen-or-llama-model-name
@@ -1029,7 +1142,7 @@ from pydantic import BaseModel
 
 from app.analyzer import analyze_threat
 
-app = FastAPI(title="AfriShield AI")
+app = FastAPI(title="AfriShield Cyber Defence")
 
 class AnalyzeRequest(BaseModel):
     input_type: str
@@ -1040,7 +1153,7 @@ class AnalyzeRequest(BaseModel):
 def health_check():
     return {
         "status": "ok",
-        "service": "AfriShield AI"
+        "service": "AfriShield Cyber Defence"
     }
 
 @app.post("/api/analyze")
@@ -1061,11 +1174,11 @@ import streamlit as st
 import requests
 
 st.set_page_config(
-    page_title="AfriShield AI",
+    page_title="AfriShield Cyber Defence",
     layout="wide"
 )
 
-st.title("AfriShield AI")
+st.title("AfriShield Cyber Defence")
 st.caption("AMD MI300X-Powered Autonomous Threat Intelligence Agent")
 
 input_type = st.selectbox(
@@ -1167,7 +1280,7 @@ Use simple measurable indicators:
 
 ### Demo Script
 
-1. Open AfriShield AI dashboard.
+1. Open AfriShield Cyber Defence dashboard.
 2. Show AMD Runtime Panel.
 3. Paste fake KRA phishing message.
 4. Click **Analyze Threat**.
@@ -1246,7 +1359,7 @@ Before submission, confirm:
 
 ## 31. Future Improvements
 
-After the hackathon, AfriShield AI can be expanded into:
+After the hackathon, AfriShield Cyber Defence can be expanded into:
 
 1. Full SOC triage assistant.
 2. Email gateway integration.
@@ -1284,8 +1397,8 @@ Do not start with complex UI or fine-tuning. Start with the analysis engine.
 
 ## 33. Final Project Statement
 
-AfriShield AI is a practical, localized, AMD-powered cyber defense agent that helps African organizations turn suspicious digital content into structured threat intelligence. By combining rule-based IOC extraction, LLM reasoning, risk scoring, MITRE mapping, and SOC-style reporting, the system provides a fast and accessible first layer of cyber analysis for institutions that need stronger digital protection but may lack mature security operations capacity.
+AfriShield Cyber Defence is a practical, localized, AMD-powered cyber defense agent that helps African organizations turn suspicious digital content into structured threat intelligence. By combining rule-based IOC extraction, LLM reasoning, risk scoring, MITRE mapping, and SOC-style reporting, the system provides a fast and accessible first layer of cyber analysis for institutions that need stronger digital protection but may lack mature security operations capacity.
 
 The hackathon MVP should prove one thing clearly:
 
-> Given a suspicious message or URL, AfriShield AI can analyze it, explain the risk, extract evidence, and recommend action using AI inference accelerated on AMD infrastructure.
+> Given a suspicious message or URL, AfriShield Cyber Defence can analyze it, explain the risk, extract evidence, and recommend action using AI inference accelerated on AMD infrastructure.
