@@ -1,5 +1,5 @@
 {
-  "component_fingerprint": "03ccfcb95e0f695d09092df77dc65abce57c4dc3654bdc88ab3e8ec0aa4aa8c6",
+  "component_fingerprint": "fb171cc8618dc488e72c32369b6a0c5e3e5601323c4e0605ed86b2a3a8a86d84",
   "tracked_files": [
     "backend/app/analyzer.py",
     "backend/app/agents.py",
@@ -15,7 +15,7 @@
   "versions": {
     "decision_policy": "deterministic-minimum-1.0.0",
     "prompt": "analysis-prompt-1.1.0",
-    "ruleset": "rules-1.1.0",
+    "ruleset": "rules-1.2.0",
     "threat_feed": "local-feed-1.1.0"
   }
 }

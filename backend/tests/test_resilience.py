@@ -127,7 +127,7 @@ def test_llm_may_escalate_unknown_finding_without_lowering_floor(monkeypatch: py
         ),
     )
 
-    result = analyzer.analyze_threat("sms", "Account notice", "Kenya")
+    result = analyzer.analyze_threat("sms", "Urgent account notice: verify your account details.", "Kenya")
 
     assert result["decision_details"]["deterministic_threat_type"] == "UNKNOWN_SUSPICIOUS"
     assert result["threat_type"] == "PHISHING"

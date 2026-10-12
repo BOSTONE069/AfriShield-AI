@@ -54,26 +54,34 @@ accuracy below 35%. These are regression floors, not product targets. The next
 target should be below 5% false negatives while improving multilingual class
 accuracy.
 
-## Version 1 baseline
+## Baselines
 
-The deterministic rules engine currently produces:
+The deterministic rules engine produces:
 
-| Metric | Result |
-|---|---:|
-| Records | 600 |
-| Exact threat-type accuracy | 35.50% |
-| Macro precision | 54.21% |
-| Macro recall | 36.46% |
-| Malicious-content recall | 83.75% |
-| Malicious false-negative rate | 16.25% (78/480) |
-| Benign false positives | 105/120 |
+| Metric | rules-1.1.0 | rules-1.2.0 (current) |
+|---|---:|---:|
+| Records | 600 | 600 |
+| Exact threat-type accuracy | 35.50% | 42.17% |
+| Macro precision | 54.21% | 82.15% |
+| Macro recall | 36.46% | 42.22% |
+| Malicious-content recall | 83.75% | 85.00% |
+| Malicious false-negative rate | 16.25% (78/480) | 15.00% (72/480) |
+| Benign false positives | 105/120 | 71/120 |
+| Weighted error cost | 903 | 839 |
 
-These results demonstrate that the benchmark is substantially harder than the
-demo samples. In particular, multilingual classification and difficult benign
-messages need improvement. The full language/type slices are stored in
-[`baselines/rules_v1_metrics.json`](baselines/rules_v1_metrics.json), and the
-raw confusion matrix is stored in
-[`baselines/rules_v1_confusion_matrix.csv`](baselines/rules_v1_confusion_matrix.csv).
+rules-1.2.0 matches keywords as whole words, ignores reassurance clauses such
+as "no password is required", detects advance-fee scams before generic
+phishing, and sends unresolved risk cues to `UNKNOWN_SUSPICIOUS` review rather
+than `BENIGN`. English accuracy is 100%; the other languages remain at 29–48%
+because the rules only understand English phrasing, and all 72 remaining false
+negatives are non-English misinformation. Multilingual classification is the
+next priority.
+
+Full language/type slices and confusion matrices are stored in
+[`baselines/rules_v2_metrics.json`](baselines/rules_v2_metrics.json) and
+[`baselines/rules_v2_confusion_matrix.csv`](baselines/rules_v2_confusion_matrix.csv)
+(previous: [`rules_v1_metrics.json`](baselines/rules_v1_metrics.json),
+[`rules_v1_confusion_matrix.csv`](baselines/rules_v1_confusion_matrix.csv)).
 
 ## Adding real anonymized cases
 

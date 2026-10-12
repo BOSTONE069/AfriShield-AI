@@ -10,7 +10,7 @@ from pathlib import Path
 from backend.app.config import get_settings
 
 ROOT = Path(__file__).resolve().parents[2]
-RULESET_VERSION = "rules-1.1.0"
+RULESET_VERSION = "rules-1.2.0"
 PROMPT_VERSION = "analysis-prompt-1.1.0"
 FEED_VERSION = "local-feed-1.1.0"
 DECISION_POLICY_VERSION = "deterministic-minimum-1.0.0"

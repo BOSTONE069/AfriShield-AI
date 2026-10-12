@@ -1,6 +1,6 @@
 """Risk scoring logic for converting evidence into a 0-100 score."""
 
-from backend.app.threat_classifier import FINANCIAL_KEYWORDS, RISKY_KEYWORDS
+from backend.app.threat_classifier import FINANCIAL_KEYWORDS, RISKY_KEYWORDS, contains_any, strip_reassurances
 
 # Base weights give each threat category an initial seriousness before evidence
 # such as URLs, credential language, and urgency is added.
@@ -18,6 +18,9 @@ CLASSIFICATION_WEIGHTS = {
     "NEEDS_REVIEW": 15,
 }
 
+CREDENTIAL_REQUEST_TERMS = frozenset({"password", "identity", "otp", "pin", "credentials"})
+TIME_PRESSURE_TERMS = frozenset({"24 hours", "immediately", "before midnight", "final notice"})
+
 
 def calculate_risk_score(text: str, iocs: dict, classification: str, evidence: list[str] | None = None) -> int:
     """Calculate an analyst-friendly risk score from rules and extracted IOCs."""
@@ -29,7 +32,7 @@ def calculate_risk_score_with_factors(
     text: str, iocs: dict, classification: str, evidence: list[str] | None = None
 ) -> tuple[int, list[dict]]:
     """Return the deterministic risk score and every contributing factor."""
-    lower_text = text.lower()
+    lower_text = strip_reassurances(text.lower())
     evidence = evidence or []
     factors: list[dict] = []
 
@@ -51,13 +54,13 @@ def calculate_risk_score_with_factors(
         add("Domain detected", 10, "deterministic", "One or more domains were extracted from the content.")
     if iocs.get("ips") or iocs.get("hashes"):
         add("Technical IOC detected", 15, "deterministic", "An IP address or file hash was extracted.")
-    if any(word in lower_text for word in RISKY_KEYWORDS):
+    if contains_any(lower_text, RISKY_KEYWORDS):
         add("Risk language", 15, "deterministic", "Urgent account or action-oriented language was found.")
-    if any(word in lower_text for word in FINANCIAL_KEYWORDS):
+    if contains_any(lower_text, FINANCIAL_KEYWORDS):
         add("Financial lure", 15, "deterministic", "Financial or institutional language was found.")
-    if any(word in lower_text for word in {"password", "identity", "otp", "pin", "credentials"}):
+    if contains_any(lower_text, CREDENTIAL_REQUEST_TERMS):
         add("Credential request", 15, "deterministic", "Credential or identity terms were found.")
-    if any(word in lower_text for word in {"24 hours", "immediately", "before midnight", "final notice"}):
+    if contains_any(lower_text, TIME_PRESSURE_TERMS):
         add("Time pressure", 10, "deterministic", "Explicit urgency or deadline pressure was found.")
     if len(evidence) >= 3:
         add("Corroborating evidence", 10, "deterministic", "At least three deterministic evidence items agree.")

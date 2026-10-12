@@ -1,0 +1,293 @@
+{
+  "binary_safety": {
+    "detected_malicious": 408,
+    "false_negative_rate": 0.15,
+    "false_negatives": 72,
+    "false_positives": 71,
+    "malicious_support": 480,
+    "recall": 0.85
+  },
+  "component_versions": {
+    "component_fingerprint": "fb171cc8618dc488e72c32369b6a0c5e3e5601323c4e0605ed86b2a3a8a86d84",
+    "decision_policy": "deterministic-minimum-1.0.0",
+    "model": "deterministic-only",
+    "model_provider": "none",
+    "prompt": "analysis-prompt-1.1.0",
+    "ruleset": "rules-1.2.0",
+    "threat_feed": "local-feed-1.1.0"
+  },
+  "dataset": {
+    "records": 600,
+    "source_counts": {
+      "synthetic_template": 600
+    },
+    "version": "1.0.0"
+  },
+  "error_costs": {
+    "false_negative": 5,
+    "false_positive": 1,
+    "wrong_malicious_type": 2
+  },
+  "overall": {
+    "accuracy": 0.4217,
+    "macro_precision": 0.8215,
+    "macro_recall": 0.4222,
+    "weighted_error_cost": 839,
+    "weighted_error_cost_per_record": 1.3983
+  },
+  "per_language": {
+    "am": {
+      "accuracy": 0.3867,
+      "false_negative_rate": 0.2,
+      "false_negatives": 12,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "ar": {
+      "accuracy": 0.3333,
+      "false_negative_rate": 0.2,
+      "false_negatives": 12,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "en": {
+      "accuracy": 1.0,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "fr": {
+      "accuracy": 0.2933,
+      "false_negative_rate": 0.2,
+      "false_negatives": 12,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "ha": {
+      "accuracy": 0.2933,
+      "false_negative_rate": 0.2,
+      "false_negatives": 12,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "pt": {
+      "accuracy": 0.2933,
+      "false_negative_rate": 0.2,
+      "false_negatives": 12,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "sheng": {
+      "accuracy": 0.48,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "sw": {
+      "accuracy": 0.2933,
+      "false_negative_rate": 0.2,
+      "false_negatives": 12,
+      "malicious_support": 60,
+      "support": 75
+    }
+  },
+  "per_scenario": {
+    "account": {
+      "accuracy": 0.9286,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 0,
+      "support": 14
+    },
+    "delivery": {
+      "accuracy": 0.8438,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 56,
+      "support": 64
+    },
+    "election": {
+      "accuracy": 0.25,
+      "false_negative_rate": 0.75,
+      "false_negatives": 24,
+      "malicious_support": 32,
+      "support": 32
+    },
+    "invoice": {
+      "accuracy": 0.5179,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 56,
+      "support": 56
+    },
+    "job": {
+      "accuracy": 0.4583,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 16,
+      "support": 24
+    },
+    "kra": {
+      "accuracy": 0.5,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 24,
+      "support": 46
+    },
+    "loan": {
+      "accuracy": 0.2083,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 16,
+      "support": 24
+    },
+    "mobile_network": {
+      "accuracy": 0.25,
+      "false_negative_rate": 0.75,
+      "false_negatives": 24,
+      "malicious_support": 32,
+      "support": 32
+    },
+    "mpesa": {
+      "accuracy": 0.4677,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 40,
+      "support": 62
+    },
+    "ngo": {
+      "accuracy": 0.2917,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 40,
+      "support": 48
+    },
+    "payment": {
+      "accuracy": 0.3571,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 0,
+      "support": 14
+    },
+    "public_health": {
+      "accuracy": 0.25,
+      "false_negative_rate": 0.75,
+      "false_negatives": 24,
+      "malicious_support": 32,
+      "support": 32
+    },
+    "sacco": {
+      "accuracy": 0.1667,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 40,
+      "support": 48
+    },
+    "sim_swap": {
+      "accuracy": 0.25,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 16,
+      "support": 16
+    },
+    "supplier": {
+      "accuracy": 0.125,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 24,
+      "support": 24
+    },
+    "university": {
+      "accuracy": 0.4844,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 56,
+      "support": 64
+    }
+  },
+  "per_threat_type": {
+    "BENIGN": {
+      "false_negative": 71,
+      "false_negative_rate": 0.5917,
+      "false_positive": 72,
+      "precision": 0.405,
+      "recall": 0.4083,
+      "support": 120,
+      "true_positive": 49
+    },
+    "BUSINESS_EMAIL_COMPROMISE": {
+      "false_negative": 84,
+      "false_negative_rate": 0.875,
+      "false_positive": 0,
+      "precision": 1.0,
+      "recall": 0.125,
+      "support": 96,
+      "true_positive": 12
+    },
+    "CREDENTIAL_THEFT": {
+      "false_negative": 0,
+      "false_negative_rate": 0.0,
+      "false_positive": 24,
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "true_positive": 0
+    },
+    "MALWARE": {
+      "false_negative": 18,
+      "false_negative_rate": 0.1875,
+      "false_positive": 0,
+      "precision": 1.0,
+      "recall": 0.8125,
+      "support": 96,
+      "true_positive": 78
+    },
+    "MISINFORMATION": {
+      "false_negative": 72,
+      "false_negative_rate": 0.75,
+      "false_positive": 0,
+      "precision": 1.0,
+      "recall": 0.25,
+      "support": 96,
+      "true_positive": 24
+    },
+    "NEEDS_REVIEW": {
+      "false_negative": 0,
+      "false_negative_rate": 0.0,
+      "false_positive": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "true_positive": 0
+    },
+    "PHISHING": {
+      "false_negative": 30,
+      "false_negative_rate": 0.3125,
+      "false_positive": 60,
+      "precision": 0.5238,
+      "recall": 0.6875,
+      "support": 96,
+      "true_positive": 66
+    },
+    "SCAM": {
+      "false_negative": 72,
+      "false_negative_rate": 0.75,
+      "false_positive": 0,
+      "precision": 1.0,
+      "recall": 0.25,
+      "support": 96,
+      "true_positive": 24
+    },
+    "UNKNOWN_SUSPICIOUS": {
+      "false_negative": 0,
+      "false_negative_rate": 0.0,
+      "false_positive": 191,
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "true_positive": 0
+    }
+  }
+}
