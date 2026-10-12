@@ -114,3 +114,22 @@ def test_technology_banner_headers_are_removed() -> None:
     assert "server" not in response.headers
     assert "x-powered-by" not in response.headers
     assert response.headers["x-safe"] == "kept"
+
+
+def test_rate_limit_ignores_unverified_api_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main.settings, "rate_limit_requests", 1)
+    monkeypatch.setattr(main.settings, "rate_limit_window_seconds", 60)
+    monkeypatch.setattr(main.settings, "api_keys", "reviewer=valid-key-with-enough-length:analyst")
+    middleware = RateLimitMiddleware(lambda *_args, **_kwargs: None)
+
+    async def call_next(_request: Request) -> Response:
+        return Response(status_code=200)
+
+    def send(key: bytes) -> Response:
+        return asyncio.run(middleware.dispatch(_request(headers=[(b"x-api-key", key)]), call_next))
+
+    # Rotating fake keys from one address shares that address's bucket.
+    assert send(b"random-fake-key-0001").status_code == 200
+    assert send(b"random-fake-key-0002").status_code == 429
+    # A valid key has its own bucket independent of the source address.
+    assert send(b"valid-key-with-enough-length").status_code == 200

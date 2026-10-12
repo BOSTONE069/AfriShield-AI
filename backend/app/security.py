@@ -96,6 +96,25 @@ require_analyst = require_role("analyst")
 require_admin = require_role("admin")
 
 
+def _rate_limit_identity(request: Request) -> str:
+    """Bucket by valid API key, otherwise by source address.
+
+    Unverified header values must not choose the bucket, or a caller could send
+    a fresh random key per request to bypass the limit entirely.
+    """
+    supplied = request.headers.get("x-api-key")
+    if supplied:
+        try:
+            configured = _configured_keys()
+        except RuntimeError:
+            configured = []
+        for secret, _role, identity in configured:
+            if hmac.compare_digest(supplied, secret):
+                return f"key:{identity}"
+    host = request.client.host if request.client else "unknown"
+    return "addr:" + hashlib.sha256(host.encode()).hexdigest()
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Bound request bursts per API key (or source address before auth)."""
 
@@ -103,17 +122,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._events: dict[str, deque[float]] = defaultdict(deque)
         self._lock = threading.Lock()
+        self._last_sweep = time.monotonic()
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         settings = get_settings()
         if request.url.path in PUBLIC_PATHS or request.method == "OPTIONS":
             return await call_next(request)
-        raw_identity = request.headers.get("x-api-key") or (request.client.host if request.client else "unknown")
-        identity = hashlib.sha256(raw_identity.encode()).hexdigest()
+        identity = _rate_limit_identity(request)
         now = time.monotonic()
         with self._lock:
-            events = self._events[identity]
             cutoff = now - settings.rate_limit_window_seconds
+            if now - self._last_sweep >= settings.rate_limit_window_seconds:
+                # Drop idle identities so many distinct callers cannot grow memory forever.
+                for stale in [key for key, queue in self._events.items() if not queue or queue[-1] <= cutoff]:
+                    del self._events[stale]
+                self._last_sweep = now
+            events = self._events[identity]
             while events and events[0] <= cutoff:
                 events.popleft()
             if len(events) >= settings.rate_limit_requests:
