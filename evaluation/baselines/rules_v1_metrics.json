@@ -1,0 +1,275 @@
+{
+  "binary_safety": {
+    "detected_malicious": 402,
+    "false_negative_rate": 0.1625,
+    "false_negatives": 78,
+    "false_positives": 105,
+    "malicious_support": 480,
+    "recall": 0.8375
+  },
+  "dataset": {
+    "records": 600,
+    "source_counts": {
+      "synthetic_template": 600
+    },
+    "version": "1.0.0"
+  },
+  "error_costs": {
+    "false_negative": 5,
+    "false_positive": 1,
+    "wrong_malicious_type": 2
+  },
+  "overall": {
+    "accuracy": 0.355,
+    "macro_precision": 0.5421,
+    "macro_recall": 0.3646,
+    "weighted_error_cost": 903,
+    "weighted_error_cost_per_record": 1.505
+  },
+  "per_language": {
+    "am": {
+      "accuracy": 0.24,
+      "false_negative_rate": 0.2167,
+      "false_negatives": 13,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "ar": {
+      "accuracy": 0.24,
+      "false_negative_rate": 0.2167,
+      "false_negatives": 13,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "en": {
+      "accuracy": 0.64,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "fr": {
+      "accuracy": 0.24,
+      "false_negative_rate": 0.2167,
+      "false_negatives": 13,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "ha": {
+      "accuracy": 0.24,
+      "false_negative_rate": 0.2167,
+      "false_negatives": 13,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "pt": {
+      "accuracy": 0.2,
+      "false_negative_rate": 0.2167,
+      "false_negatives": 13,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "sheng": {
+      "accuracy": 0.64,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 60,
+      "support": 75
+    },
+    "sw": {
+      "accuracy": 0.4,
+      "false_negative_rate": 0.2167,
+      "false_negatives": 13,
+      "malicious_support": 60,
+      "support": 75
+    }
+  },
+  "per_scenario": {
+    "account": {
+      "accuracy": 0.0,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 0,
+      "support": 14
+    },
+    "delivery": {
+      "accuracy": 0.6719,
+      "false_negative_rate": 0.1071,
+      "false_negatives": 6,
+      "malicious_support": 56,
+      "support": 64
+    },
+    "election": {
+      "accuracy": 0.25,
+      "false_negative_rate": 0.75,
+      "false_negatives": 24,
+      "malicious_support": 32,
+      "support": 32
+    },
+    "invoice": {
+      "accuracy": 0.4107,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 56,
+      "support": 56
+    },
+    "job": {
+      "accuracy": 0.2083,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 16,
+      "support": 24
+    },
+    "kra": {
+      "accuracy": 0.5217,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 24,
+      "support": 46
+    },
+    "loan": {
+      "accuracy": 0.0,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 16,
+      "support": 24
+    },
+    "mobile_network": {
+      "accuracy": 0.25,
+      "false_negative_rate": 0.75,
+      "false_negatives": 24,
+      "malicious_support": 32,
+      "support": 32
+    },
+    "mpesa": {
+      "accuracy": 0.3871,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 40,
+      "support": 62
+    },
+    "ngo": {
+      "accuracy": 0.2917,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 40,
+      "support": 48
+    },
+    "payment": {
+      "accuracy": 0.0,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 0,
+      "support": 14
+    },
+    "public_health": {
+      "accuracy": 0.25,
+      "false_negative_rate": 0.75,
+      "false_negatives": 24,
+      "malicious_support": 32,
+      "support": 32
+    },
+    "sacco": {
+      "accuracy": 0.1875,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 40,
+      "support": 48
+    },
+    "sim_swap": {
+      "accuracy": 0.0,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 16,
+      "support": 16
+    },
+    "supplier": {
+      "accuracy": 0.375,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 24,
+      "support": 24
+    },
+    "university": {
+      "accuracy": 0.5938,
+      "false_negative_rate": 0.0,
+      "false_negatives": 0,
+      "malicious_support": 56,
+      "support": 64
+    }
+  },
+  "per_threat_type": {
+    "BENIGN": {
+      "false_negative": 105,
+      "false_negative_rate": 0.875,
+      "false_positive": 78,
+      "precision": 0.1613,
+      "recall": 0.125,
+      "support": 120,
+      "true_positive": 15
+    },
+    "BUSINESS_EMAIL_COMPROMISE": {
+      "false_negative": 60,
+      "false_negative_rate": 0.625,
+      "false_positive": 30,
+      "precision": 0.5455,
+      "recall": 0.375,
+      "support": 96,
+      "true_positive": 36
+    },
+    "CREDENTIAL_THEFT": {
+      "false_negative": 0,
+      "false_negative_rate": 0.0,
+      "false_positive": 16,
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "true_positive": 0
+    },
+    "MALWARE": {
+      "false_negative": 54,
+      "false_negative_rate": 0.5625,
+      "false_positive": 0,
+      "precision": 1.0,
+      "recall": 0.4375,
+      "support": 96,
+      "true_positive": 42
+    },
+    "MISINFORMATION": {
+      "false_negative": 72,
+      "false_negative_rate": 0.75,
+      "false_positive": 0,
+      "precision": 1.0,
+      "recall": 0.25,
+      "support": 96,
+      "true_positive": 24
+    },
+    "PHISHING": {
+      "false_negative": 0,
+      "false_negative_rate": 0.0,
+      "false_positive": 80,
+      "precision": 0.5455,
+      "recall": 1.0,
+      "support": 96,
+      "true_positive": 96
+    },
+    "SCAM": {
+      "false_negative": 96,
+      "false_negative_rate": 1.0,
+      "false_positive": 60,
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 96,
+      "true_positive": 0
+    },
+    "UNKNOWN_SUSPICIOUS": {
+      "false_negative": 0,
+      "false_negative_rate": 0.0,
+      "false_positive": 123,
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "true_positive": 0
+    }
+  }
+}

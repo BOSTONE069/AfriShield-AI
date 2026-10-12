@@ -1,0 +1,25 @@
+{
+  "archive_filename": "sms+spam+collection.zip",
+  "archive_sha256": "1587ea43e58e82b14ff1f5425c88e17f8496bfcdb67a583dbff9eefaf9963ce3",
+  "attribution": "Almeida, T. & Hidalgo, J. (2011), UCI Machine Learning Repository",
+  "doi": "10.24432/C5CC84",
+  "import_date": "2026-08-08",
+  "license": "CC BY 4.0",
+  "processing": {
+    "anonymization": "automated direct-identifier redaction; human privacy review still required",
+    "deduplication": "case-insensitive exact match after normalization and redaction",
+    "split": "deterministic 80/20 stratified by source label"
+  },
+  "records": {
+    "by_source_label": {
+      "ham": 4517,
+      "spam": 627
+    },
+    "processed": 5144,
+    "train": 4116,
+    "validation": 1028
+  },
+  "source_id": "uci_sms_spam_collection",
+  "source_url": "https://archive.ics.uci.edu/dataset/228/sms",
+  "title": "SMS Spam Collection"
+}

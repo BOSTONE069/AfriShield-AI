@@ -1,0 +1,21 @@
+{
+  "component_fingerprint": "03ccfcb95e0f695d09092df77dc65abce57c4dc3654bdc88ab3e8ec0aa4aa8c6",
+  "tracked_files": [
+    "backend/app/analyzer.py",
+    "backend/app/agents.py",
+    "backend/app/threat_classifier.py",
+    "backend/app/risk_scoring.py",
+    "backend/app/ioc_extractor.py",
+    "backend/app/enrichment.py",
+    "backend/app/llm_client.py",
+    "backend/app/config.py",
+    "samples/threat_feed.json",
+    "backend/requirements-llm.txt"
+  ],
+  "versions": {
+    "decision_policy": "deterministic-minimum-1.0.0",
+    "prompt": "analysis-prompt-1.1.0",
+    "ruleset": "rules-1.1.0",
+    "threat_feed": "local-feed-1.1.0"
+  }
+}

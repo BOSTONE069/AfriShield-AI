@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afrishield.example/schemas/evaluation-record-v1.json",
+  "title": "AfriShield evaluation record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "dataset_version", "text", "input_type", "language", "language_name", "locale",
+    "threat_type", "scenario", "is_malicious", "source", "review_status", "contains_personal_data"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^AFS-EVAL-[0-9]{4,}$"},
+    "dataset_version": {"type": "string"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 20000},
+    "input_type": {"enum": ["email", "url", "sms", "social_message", "text"]},
+    "language": {"type": "string", "minLength": 2},
+    "language_name": {"type": "string", "minLength": 2},
+    "locale": {"type": "string", "minLength": 2},
+    "threat_type": {
+      "enum": ["PHISHING", "SCAM", "MALWARE", "BUSINESS_EMAIL_COMPROMISE", "MISINFORMATION", "BENIGN"]
+    },
+    "scenario": {"type": "string", "minLength": 2},
+    "is_malicious": {"type": "boolean"},
+    "source": {"enum": ["synthetic_template", "anonymized_field_sample"]},
+    "review_status": {"enum": ["synthetic_unreviewed", "single_reviewed", "double_reviewed", "adjudicated"]},
+    "contains_personal_data": {"const": false}
+  }
+}
