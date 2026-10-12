@@ -48,12 +48,12 @@ jobs:
       - name: Verify evaluated component fingerprint
         run: python evaluation/check_component_baseline.py
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage.xml
       - name: Upload evaluation report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evaluation-report
           path: evaluation/results/ci
