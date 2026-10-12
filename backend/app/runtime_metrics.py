@@ -8,11 +8,11 @@ from backend.app.config import get_settings
 class Timer:
     """Small context manager for measuring pipeline latency."""
 
-    def __enter__(self):
+    def __enter__(self) -> "Timer":
         self.start = time.perf_counter()
         return self
 
-    def __exit__(self, *_args):
+    def __exit__(self, *_args: object) -> None:
         self.end = time.perf_counter()
         self.latency_seconds = round(self.end - self.start, 3)
 
@@ -22,8 +22,14 @@ def runtime_payload(latency_seconds: float = 0.0, tokens_per_second: float = 0.0
     settings = get_settings()
     gpu = settings.runtime_gpu
     if gpu == "auto":
-        gpu = _detect_compute_device()
+        gpu = (
+            _detect_compute_device()
+            if settings.use_llm and settings.llm_provider == "local_transformers"
+            else "Not used (deterministic mode)"
+        )
     return {
+        "available": True,
+        "status": "online",
         "gpu": gpu,
         "cloud": settings.runtime_cloud,
         "backend": settings.runtime_backend,

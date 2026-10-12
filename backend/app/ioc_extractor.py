@@ -7,7 +7,6 @@ an LLM because URLs, domains, emails, IPs, and hashes are structured artifacts.
 import re
 from urllib.parse import urlparse
 
-
 # Precompiled regexes keep repeated analysis calls fast and centralize the IOC
 # vocabulary in one place.
 URL_REGEX = re.compile(r"https?://[^\s<>\")\]]+", re.IGNORECASE)
@@ -25,15 +24,15 @@ def _clean_url(url: str) -> str:
     return url.rstrip(".,;:!?")
 
 
-def _unique(values: list[str]) -> list[str]:
+def _unique(values: list[str], *, lower: bool = False) -> list[str]:
     """Deduplicate while preserving first-seen order for stable UI output."""
-    seen = set()
-    result = []
+    seen: set[str] = set()
+    result: list[str] = []
     for value in values:
-        normalized = value.lower()
-        if normalized not in seen:
-            seen.add(normalized)
-            result.append(value)
+        key = value.lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(value.lower() if lower else value)
     return result
 
 
@@ -59,8 +58,8 @@ def extract_iocs(text: str) -> dict:
 
     return {
         "urls": _unique(urls),
-        "domains": _unique(domains),
-        "emails": _unique(emails),
+        "domains": _unique(domains, lower=True),
+        "emails": _unique(emails, lower=True),
         "ips": _unique(ips),
-        "hashes": _unique(hashes),
+        "hashes": _unique(hashes, lower=True),
     }

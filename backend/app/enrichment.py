@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import ipaddress
 import json
+from functools import lru_cache
 from pathlib import Path
-
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[2]
 LOCAL_FEED_PATH = ROOT / "samples" / "threat_feed.json"
@@ -25,7 +26,9 @@ def enrich_iocs(iocs: dict) -> list[dict]:
     for domain in iocs.get("domains", []):
         normalized = domain.lower()
         if normalized in feed.get("domains", {}):
-            findings.append(_finding("domain", domain, "Local threat feed", "malicious", "high", feed["domains"][normalized]))
+            findings.append(
+                _finding("domain", domain, "Local threat feed", "malicious", "high", feed["domains"][normalized])
+            )
         findings.extend(_domain_heuristics(domain))
 
     for url in iocs.get("urls", []):
@@ -46,17 +49,20 @@ def enrich_iocs(iocs: dict) -> list[dict]:
 
     for file_hash in iocs.get("hashes", []):
         if file_hash.lower() in feed.get("hashes", {}):
-            findings.append(_finding("hash", file_hash, "Local threat feed", "malicious", "high", feed["hashes"][file_hash.lower()]))
+            findings.append(
+                _finding("hash", file_hash, "Local threat feed", "malicious", "high", feed["hashes"][file_hash.lower()])
+            )
 
     return _dedupe_findings(findings)
 
 
+@lru_cache(maxsize=1)
 def _load_local_feed() -> dict:
-    """Load a tiny local feed used by tests and offline demos."""
+    """Load the local threat feed once and cache it for the process lifetime."""
     if not LOCAL_FEED_PATH.exists():
         return {"domains": {}, "hashes": {}}
     with LOCAL_FEED_PATH.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+        return cast(dict[str, Any], json.load(handle))
 
 
 def _domain_heuristics(domain: str) -> list[dict]:
@@ -98,7 +104,14 @@ def _ip_finding(ip: str) -> dict:
         return _finding("ip", ip, "IP parser", "informational", "low", "Private IP address; likely internal context.")
     if address.is_reserved or address.is_loopback:
         return _finding("ip", ip, "IP parser", "informational", "low", "Reserved or loopback IP address.")
-    return _finding("ip", ip, "IP parser", "observable", "medium", "Public IP address should be enriched with external TI in production.")
+    return _finding(
+        "ip",
+        ip,
+        "IP parser",
+        "observable",
+        "medium",
+        "Public IP address should be enriched with external TI in production.",
+    )
 
 
 def _finding(observable_type: str, value: str, source: str, verdict: str, confidence: str, details: str) -> dict:

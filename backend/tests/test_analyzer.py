@@ -21,7 +21,10 @@ def test_analyzer_returns_structured_phishing_result():
     assert result["risk_score"] >= 75
     assert "kra-refund-verify.com" in result["iocs"]["domains"]
     assert result["mitre_mapping"]
-    assert "Incident Report" in result["report_markdown"]
+    assert "Technical SOC Report" in result["report_markdown"]
+    assert {"executive_summary", "technical_soc_report", "user_advisory", "incident_ticket"}.issubset(
+        result["report_variants"]
+    )
 
 
 def test_analyzer_handles_benign_message():

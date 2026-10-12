@@ -1,6 +1,6 @@
 """Tests for risk score and severity behavior."""
 
-from backend.app.risk_scoring import calculate_risk_score, severity_from_score
+from backend.app.risk_scoring import calculate_risk_score, calculate_risk_score_with_factors, severity_from_score
 
 
 def test_high_risk_phishing_scores_high():
@@ -20,3 +20,16 @@ def test_benign_is_capped_low():
     iocs = {"urls": [], "domains": [], "ips": [], "hashes": []}
 
     assert calculate_risk_score(text, iocs, "BENIGN", []) <= 20
+
+
+def test_score_breakdown_reconciles_to_total():
+    """Displayed factor points must exactly explain the returned score."""
+    score, factors = calculate_risk_score_with_factors(
+        "Verify your account at https://example.invalid/login immediately",
+        {"urls": ["https://example.invalid/login"], "domains": ["example.invalid"], "ips": [], "hashes": []},
+        "PHISHING",
+        ["account language", "external link", "urgent action"],
+    )
+
+    assert sum(factor["points"] for factor in factors) == score
+    assert {factor["source"] for factor in factors} <= {"deterministic", "policy"}

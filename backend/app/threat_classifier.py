@@ -126,13 +126,41 @@ def _recommended_actions(threat_type: str) -> list[str]:
     """Return analyst response actions matched to the final threat category."""
     common = ["Preserve the message and analysis output for audit records."]
     actions = {
-        "PHISHING": ["Do not click the link.", "Block or monitor the domain.", "Warn targeted users about the campaign."],
-        "CREDENTIAL_THEFT": ["Do not enter credentials.", "Reset credentials if the link was used.", "Enable MFA and review account activity."],
-        "MALWARE": ["Do not open attachments.", "Isolate affected endpoints.", "Submit artifacts to the security team for malware analysis."],
-        "BUSINESS_EMAIL_COMPROMISE": ["Verify payment requests out of band.", "Review mailbox rules and sign-in logs.", "Escalate to finance and security teams."],
-        "SCAM": ["Do not send money or personal information.", "Report the sender.", "Notify users through trusted channels."],
-        "MISINFORMATION": ["Avoid resharing the message.", "Verify claims with authoritative sources.", "Monitor for coordinated spread."],
-        "UNKNOWN_SUSPICIOUS": ["Treat the content with caution.", "Request analyst review.", "Block links until validated."],
+        "PHISHING": [
+            "Do not click the link.",
+            "Block or monitor the domain.",
+            "Warn targeted users about the campaign.",
+        ],
+        "CREDENTIAL_THEFT": [
+            "Do not enter credentials.",
+            "Reset credentials if the link was used.",
+            "Enable MFA and review account activity.",
+        ],
+        "MALWARE": [
+            "Do not open attachments.",
+            "Isolate affected endpoints.",
+            "Submit artifacts to the security team for malware analysis.",
+        ],
+        "BUSINESS_EMAIL_COMPROMISE": [
+            "Verify payment requests out of band.",
+            "Review mailbox rules and sign-in logs.",
+            "Escalate to finance and security teams.",
+        ],
+        "SCAM": [
+            "Do not send money or personal information.",
+            "Report the sender.",
+            "Notify users through trusted channels.",
+        ],
+        "MISINFORMATION": [
+            "Avoid resharing the message.",
+            "Verify claims with authoritative sources.",
+            "Monitor for coordinated spread.",
+        ],
+        "UNKNOWN_SUSPICIOUS": [
+            "Treat the content with caution.",
+            "Request analyst review.",
+            "Block links until validated.",
+        ],
         "BENIGN": ["No immediate security action required.", "Continue routine monitoring."],
     }
     return actions.get(threat_type, []) + common

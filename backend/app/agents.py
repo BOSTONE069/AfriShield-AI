@@ -8,8 +8,8 @@ idea from the project brief.
 from backend.app.enrichment import enrich_iocs
 from backend.app.ioc_extractor import extract_iocs
 from backend.app.mitre_mapper import map_to_mitre
-from backend.app.report_generator import generate_report
-from backend.app.risk_scoring import calculate_risk_score, severity_from_score
+from backend.app.report_generator import generate_report, generate_report_bundle
+from backend.app.risk_scoring import calculate_risk_score_with_factors, severity_from_score
 from backend.app.threat_classifier import Classification, classify_threat
 
 
@@ -44,9 +44,9 @@ class EnrichmentAgent:
 class RiskAgent:
     """Calculates score and severity from classification evidence."""
 
-    def run(self, text: str, iocs: dict, threat_type: str, evidence: list[str]) -> tuple[int, str]:
-        score = calculate_risk_score(text, iocs, threat_type, evidence)
-        return score, severity_from_score(score)
+    def run(self, text: str, iocs: dict, threat_type: str, evidence: list[str]) -> tuple[int, str, list[dict]]:
+        score, factors = calculate_risk_score_with_factors(text, iocs, threat_type, evidence)
+        return score, severity_from_score(score), factors
 
 
 class MitreAgent:
@@ -57,7 +57,7 @@ class MitreAgent:
 
 
 class ReportAgent:
-    """Builds the final SOC report in Markdown."""
+    """Builds the final Markdown reports for different audiences."""
 
     def run(
         self,
@@ -85,4 +85,41 @@ class ReportAgent:
             summary,
             evidence,
             recommended_actions,
+        )
+
+    def run_all(
+        self,
+        input_type: str,
+        context: str,
+        threat_type: str,
+        severity: str,
+        risk_score: int,
+        iocs: dict,
+        enrichment: list[dict],
+        mitre_mapping: list[dict],
+        summary: str,
+        evidence: list[str],
+        recommended_actions: list[str],
+        confidence: str = "MEDIUM",
+        evidence_strength: str = "LOW",
+        score_factors: list[dict] | None = None,
+        decision_details: dict | None = None,
+    ) -> dict[str, str]:
+        """Return all supported report variants for one analysis."""
+        return generate_report_bundle(
+            input_type,
+            context,
+            threat_type,
+            severity,
+            risk_score,
+            iocs,
+            enrichment,
+            mitre_mapping,
+            summary,
+            evidence,
+            recommended_actions,
+            confidence,
+            evidence_strength,
+            score_factors,
+            decision_details,
         )
