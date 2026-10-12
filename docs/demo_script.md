@@ -7,7 +7,7 @@ Use this flow to demonstrate AfriShield Cyber Defence to judges, lecturers, or n
 Terminal 1:
 
 ```bash
-uvicorn backend.app.main:app --reload
+uvicorn backend.app.main:app --reload --no-server-header
 ```
 
 Terminal 2:
@@ -49,6 +49,7 @@ Open the advanced details area and show:
 - MITRE tactics and techniques.
 - Runtime latency and model metadata.
 - Full SOC-style Markdown report.
+- Report type selector for executive summary, technical SOC report, user advisory, and incident ticket formats.
 
 Then demonstrate:
 

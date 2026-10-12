@@ -12,7 +12,8 @@ AfriShield Cyber Defence provides a lightweight AI-assisted triage console:
 
 - A common user can paste a suspicious message and receive a clear risk label, explanation, and next steps.
 - An analyst can inspect extracted IOCs, enrichment, ATT&CK mapping, and a SOC-style report.
-- The organization can export reports as Markdown or PDF and capture analyst feedback for future improvement.
+- The organization can generate executive summaries, technical SOC reports, user advisories, and incident-ticket formats, then export them as Markdown or PDF.
+- Analyst feedback can be captured for future improvement.
 
 ## Technology
 

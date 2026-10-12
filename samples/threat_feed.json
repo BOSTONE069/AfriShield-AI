@@ -1,4 +1,7 @@
 {
+  "_meta": {
+    "version": "local-feed-1.1.0"
+  },
   "domains": {
     "kra-refund-verify.com": "Known demo KRA refund phishing domain.",
     "mpesa-secure-helpdesk.net": "Known demo M-Pesa account recovery phishing domain.",

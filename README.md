@@ -13,7 +13,8 @@ The application currently runs locally with a real open-source model, `Qwen/Qwen
 - Multi-agent-style analyzer pipeline covering preprocessing, IOC extraction, classification, enrichment, risk scoring, MITRE mapping, and reporting.
 - Deterministic baseline analysis for reliable demos and tests.
 - Optional LLM classification enrichment using a local Transformers model or an OpenAI-compatible inference endpoint.
-- Markdown report download, PDF report export, and browser copy-to-clipboard support.
+- Multiple report formats: executive summary, technical SOC report, user advisory, and incident ticket.
+- Markdown report download, PDF report export, and browser copy-to-clipboard support for the selected report format.
 - Analyst feedback capture with verdict, rating, and comments stored as JSONL.
 - TXT, MD, EML, LOG, and PDF evidence upload text extraction.
 - Threat feed enrichment from the local sample feed plus heuristic domain/IP/URL checks.
@@ -47,6 +48,21 @@ pip install -r backend/requirements.txt
 pip install -r frontend/requirements.txt
 ```
 
+Production dependencies are pinned and do not include test tools or the large
+local-model stack. For development, install the combined quality/test profile:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+For optional local Transformers inference, also install:
+
+```bash
+pip install -r backend/requirements-llm.txt
+```
+
+Use the PyTorch package index when a CUDA/ROCm-specific wheel is required.
+
 For local GPU inference, install a PyTorch build that matches your driver/CUDA stack. The tested local setup uses PyTorch `2.6.0+cu124` with CUDA `12.4`.
 
 Check CUDA from Python:
@@ -60,7 +76,7 @@ python3 -c "import torch; print(torch.__version__); print(torch.version.cuda); p
 Start the backend from the repository root:
 
 ```bash
-uvicorn backend.app.main:app --reload
+uvicorn backend.app.main:app --reload --no-server-header
 ```
 
 Start the dashboard in another terminal:
@@ -108,19 +124,100 @@ Set `USE_LLM=false` for deterministic rules-only operation.
 
 ## API Example
 
+Protected endpoints require an API key. Submit analysis to the bounded background queue and poll the returned job URL:
+
 ```bash
-curl -X POST http://localhost:8000/api/analyze \
+curl -X POST http://localhost:8000/api/analysis/jobs \
+  -H "X-API-Key: your-analyst-key" \
   -H "Content-Type: application/json" \
-  -d '{"input_type":"sms","context":"Kenya","content":"Dear taxpayer, your KRA refund is ready. Verify your account at https://kra-refund-verify.com/login"}'
+  -d '{"input_type":"sms","context":"Kenya","content":"Dear taxpayer, your KRA refund is ready. Verify your account at https://kra-refund-verify.com/login","remote_processing_consent":false}'
 ```
+
+The response contains a `job_id`. Poll `GET /api/analysis/jobs/{job_id}` with the same key. Synchronous `/api/analyze` is disabled in the production Compose configuration.
+
+Remote LLM processing is opt-in for every request. When `LLM_PROVIDER=openai_compatible`, evidence is not transmitted unless `remote_processing_consent` is explicitly `true`.
 
 ## Tests
 
 ```bash
-python3 -m pytest backend/tests
+python3 -m pytest
+ruff check .
+ruff format --check .
+mypy
+pip-audit -r backend/requirements.txt
+pip-audit -r frontend/requirements.txt
 ```
 
-The current test suite covers analyzer basics, API endpoints, document extraction, PDF export, analyst feedback, IOC extraction, local threat feed enrichment, MITRE mappings, sample cases, risk scoring, and LLM fallback behavior.
+Pytest enforces at least 75% branch-aware backend coverage. The suite also
+covers malformed inputs, upload and extraction limits, malformed PDFs, prompt
+injection downgrade attempts, and concurrent deterministic analysis.
+
+Run a smoke load test against a running backend:
+
+```bash
+python3 scripts/load_test.py --requests 50 --concurrency 10
+```
+
+## Evaluation Benchmark
+
+The repository includes a versioned 600-case multilingual safety benchmark.
+It reports confusion matrices, precision, recall, false-negative rate, and
+results by language, threat type, and scenario:
+
+```bash
+python3 evaluation/evaluate.py \
+  --max-false-negative-rate 0.17 \
+  --min-accuracy 0.35
+```
+
+See [Evaluation Benchmark](evaluation/README.md) for the dataset card,
+limitations, anonymization rules, and the process for adding analyst-reviewed
+field samples.
+
+Analyst feedback now records corrected labels, severity, error reasons, IOCs, actions, reviewer identity, score factors, and component versions in encrypted SQLite. Administrators can retrieve content-free aggregate metrics from `GET /api/admin/feedback/metrics`, and reviewed cases can be evaluated with `python evaluation/evaluate_feedback.py`. Prediction-affecting component changes must pass the held-out regression before the component fingerprint is refreshed.
+
+## Containers
+
+Create deployment secrets before starting the services:
+
+```bash
+cp .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Put the first value in both the secret portion of `AFRISHIELD_API_KEYS` and `AFRISHIELD_API_KEY`. API credentials use `reviewer-name=secret:role`, so feedback is attributed to the authenticated reviewer without accepting a user-supplied identity. Put the second generated value in `AFRISHIELD_DATA_ENCRYPTION_KEY`. Then start both services:
+
+If upgrading an existing checkout with `data/feedback.jsonl`, migrate it after filling in `.env` and before deployment:
+
+```bash
+python scripts/migrate_feedback.py
+```
+
+The migration validates every row, imports it into encrypted SQLite, writes an encrypted `.fernet` recovery archive, and removes the plaintext only after both operations succeed. `/ready` reports `not_ready` while legacy plaintext feedback remains.
+
+```bash
+docker compose up --build
+```
+
+If either default host port is already in use, override it without editing the
+Compose file:
+
+```bash
+AFRISHIELD_FRONTEND_PORT=8502 docker compose up --build
+```
+
+The API is exposed at `http://localhost:8000`, the dashboard at
+`http://localhost:8501`, and both images include health checks. `/health` is a
+liveness probe; `/ready` reports readiness and the active analysis mode.
+
+Deployment controls include API-key roles (`viewer`, `analyst`, `admin`), per-key rate limiting, request IDs, body-free audit logs, encrypted SQLite feedback, automatic retention, strict upload MIME/signature checks, subprocess parser limits, and a bounded background inference queue. Terminate TLS at a trusted reverse proxy or load balancer; API keys and submitted evidence must never cross an unencrypted network.
+
+Uvicorn is launched with `--no-server-header`, and application responses strip common technology-banner headers. If a reverse proxy is added, configure it to discard upstream `Server` headers as well—for Nginx, use `proxy_hide_header Server`; complete removal of Nginx's own banner requires a build/module that supports clearing its generated `Server` header.
+
+The CI workflow runs formatting, linting, type checking, tests with the
+coverage floor, dependency audits, and both container builds. Dependabot checks
+Python and GitHub Actions dependencies weekly.
 
 ## Documentation
 

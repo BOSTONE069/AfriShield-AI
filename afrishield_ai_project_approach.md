@@ -22,7 +22,7 @@ The project has moved beyond the original MVP plan and is now implemented as **A
 | Runtime panel | Dashboard shows provider, model, backend, framework, compute device, latency, and tokens/sec. |
 | Threat feed enrichment | Extracted indicators are checked against `samples/threat_feed.json` and local reputation heuristics. |
 | MITRE mapping | Mappings now include formal ATT&CK technique IDs such as `T1566`. |
-| Reports | Markdown reports are generated, downloadable, copyable, and exportable to PDF. |
+| Reports | Executive summary, technical SOC report, user advisory, and incident ticket formats are generated, downloadable, copyable, and exportable to PDF. |
 | Analyst feedback | Correct/incorrect/needs-review feedback, confidence rating, and comments are captured through the dashboard and saved as JSONL. |
 | Document upload | TXT, MD, EML, LOG, and PDF evidence upload is supported through the backend extraction endpoint. |
 | Multi-agent mode | Implemented as an orchestrated multi-agent-style pipeline with preprocessing, IOC, classification, enrichment, risk, MITRE, and report agents. |
@@ -274,7 +274,7 @@ The goal is a working, polished, demonstrable AI threat intelligence agent.
 | Model | Qwen2.5, Llama, Mistral, or another open-source instruct model |
 | Database | SQLite for MVP, PostgreSQL for production |
 | Vector Store | ChromaDB or FAISS if RAG is added |
-| Reports | Markdown, copy-to-clipboard, and PDF export |
+| Reports | Executive summary, technical SOC report, user advisory, incident ticket, copy-to-clipboard, and PDF export |
 | Deployment | AMD cloud VM + GitHub repo |
 
 ### Recommended MVP Choice

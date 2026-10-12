@@ -18,7 +18,6 @@ FastAPI backend
       |-- IOCAgent
       |-- ClassificationAgent
       |-- EnrichmentAgent
-      |-- RiskAgent
       |-- MitreAgent
       |-- ReportAgent
       |
@@ -37,7 +36,8 @@ The dashboard lives in `frontend/streamlit_app.py`.
 - Provides a common-user form for suspicious messages, URLs, and uploaded evidence.
 - Includes quick example cases for Kenyan and African threat scenarios.
 - Displays a simple risk explanation first, then hides technical detail under advanced sections.
-- Supports Markdown download, PDF export, report copy, and analyst feedback.
+- Supports executive summary, technical SOC report, user advisory, and incident ticket report formats.
+- Supports Markdown download, PDF export, report copy, and analyst feedback for the selected report format.
 - Uses responsive CSS so the sidebar, result cards, tabs, tables, and forms work on smaller screens.
 
 ## Backend
@@ -64,7 +64,7 @@ The orchestrator is `backend/app/analyzer.py`; agent-style units are defined in 
 4. **Threat feed enrichment** checks extracted indicators against `samples/threat_feed.json` and local heuristics.
 5. **Risk scoring** assigns a 0-100 score and severity label.
 6. **MITRE mapping** adds tactics, techniques, and formal ATT&CK IDs.
-7. **Report generation** creates a SOC-style Markdown report. LLM-generated reports are available but disabled by default for faster local demos.
+7. **Report generation** creates audience-specific Markdown reports: executive summary, technical SOC report, user advisory, and incident ticket. LLM-generated SOC reports are available but disabled by default for faster local demos.
 
 ## Model Runtime
 
