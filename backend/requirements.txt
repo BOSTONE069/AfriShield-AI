@@ -1,5 +1,5 @@
 # Production API dependencies. Development tools live in ../requirements-dev.txt.
-fastapi==0.139.2
+fastapi==0.143.0
 uvicorn[standard]==0.30.6
 pydantic==2.9.2
 python-dotenv==1.2.2
