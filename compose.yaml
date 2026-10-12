@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      AFRISHIELD_CORS_ORIGINS: http://localhost:${AFRISHIELD_FRONTEND_PORT:-8501}
+      USE_LLM: "false"
+      USE_LLM_REPORTS: "false"
+      MAX_UPLOAD_BYTES: "5242880"
+      MAX_PDF_PAGES: "50"
+      MAX_EXTRACTED_CHARS: "20000"
+      MAX_PARSER_SECONDS: "8"
+      MAX_PARSER_MEMORY_MB: "256"
+      AUTH_REQUIRED: "${AFRISHIELD_AUTH_REQUIRED:-true}"
+      AFRISHIELD_API_KEYS: "${AFRISHIELD_API_KEYS:?Set AFRISHIELD_API_KEYS in .env}"
+      DATA_ENCRYPTION_KEY: "${AFRISHIELD_DATA_ENCRYPTION_KEY:?Set AFRISHIELD_DATA_ENCRYPTION_KEY in .env}"
+      FEEDBACK_DATABASE_PATH: /app/data/feedback.db
+      LEGACY_FEEDBACK_PATH: /app/data/feedback.jsonl
+      FEEDBACK_RETENTION_DAYS: "${AFRISHIELD_FEEDBACK_RETENTION_DAYS:-90}"
+      AUDIT_LOG_PATH: /app/data/audit
+      AUDIT_RETENTION_DAYS: "${AFRISHIELD_AUDIT_RETENTION_DAYS:-30}"
+      RATE_LIMIT_REQUESTS: "${AFRISHIELD_RATE_LIMIT_REQUESTS:-60}"
+      RATE_LIMIT_WINDOW_SECONDS: "60"
+      ANALYSIS_WORKERS: "${AFRISHIELD_ANALYSIS_WORKERS:-2}"
+      ANALYSIS_QUEUE_SIZE: "${AFRISHIELD_ANALYSIS_QUEUE_SIZE:-32}"
+      ANALYSIS_JOB_RETENTION_SECONDS: "3600"
+      ALLOW_SYNC_ANALYSIS: "false"
+    ports:
+      - "${AFRISHIELD_BACKEND_PORT:-8000}:8000"
+    volumes:
+      - afrishield-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "/app/container_healthcheck.py", "http://127.0.0.1:8000/ready"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      AFRISHIELD_API_BASE: http://backend:8000
+      AFRISHIELD_API_KEY: "${AFRISHIELD_API_KEY:?Set AFRISHIELD_API_KEY in .env}"
+    ports:
+      - "${AFRISHIELD_FRONTEND_PORT:-8501}:8501"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  afrishield-data:
